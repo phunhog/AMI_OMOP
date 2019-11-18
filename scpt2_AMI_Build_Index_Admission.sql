@@ -5,7 +5,7 @@ Create AMI_COHORT_BASE table that contains MRNs and some demographic information
 the first AMI encounter, where the primary diagnosis is AMI within the specified time frame.
 */
 -----------------------------------------------------------------------------------------
-<<<<<<< HEAD
+
 USE OMOP_CDM
 =======
 
@@ -17,19 +17,19 @@ GO
 IF OBJECT_ID('dbo.COHORT_BASE', 'U') IS NOT NULL 
 	DROP table dbo.COHORT_BASE
 
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
 GO
 
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
-<<<<<<< HEAD
+
 GO
 
 if exists (select * from sys.objects where name = 'COHORT_BASE' and type = 'u')
     drop table COHORT_BASE
 =======
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
 
 GO
 --drop table AMI.COHORT_BASE if exists;	--Netezza SQL
@@ -38,26 +38,26 @@ GO
 select 
 	  OVO.VISIT_OCCURRENCE_ID 	 	as VISIT_OCCURRENCE_ID
 	, OVO.VISIT_START_DATE 		 	as ADMIT_DATE
-<<<<<<< HEAD
+
 	, OVO.VISIT_START_DATE		 	as ADMIT_DATETIME
 	, OVO.VISIT_END_DATE 		 	as DISCHARGE_DATE
 	, OVO.VISIT_END_DATE	 		as DISCHARGE_DATETIME
-=======
+
 	, OVO.VISIT_START_DATE  	 	as ADMIT_DATETIME
 	, OVO.VISIT_END_DATE 		 	as DISCHARGE_DATE
 	, OVO.VISIT_END_DATE	 	 	as DISCHARGE_DATETIME
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
 	, OVO.VISIT_START_DATE 		 	as INDEX_ADMIT_DATE
 	, OVO.VISIT_END_DATE 		 	as INDEX_DISCHARGE_DATE
 	, OCO.CONDITION_SOURCE_VALUE 	as PRIM_DIAG
 	, OVO.PERSON_ID 				as PERSON_ID
 	, OPer.PERSON_SOURCE_VALUE 		as MRN
-<<<<<<< HEAD
+
 	, OPer.BIRTH_DATE 				as DOB
-=======
+
 	--, OPer.BIRTH_DATE	 			as DOB
 
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
 	, RefPer.FIRST_NAME  			as FIRST_NAME
 	, RefPer.LAST_NAME   			as LAST_NAME
 	, RefPer.MIDDLE_NAME 			as MIDDLE_NAME
@@ -65,7 +65,7 @@ select
 	, OCon2.CONCEPT_NAME 			as RACE
 	, OCon3.CONCEPT_NAME 			as ETHNICITY
 	, OLoc.ZIP 						as ZIPCODE
-<<<<<<< HEAD
+
 	, datediff(YEAR,OPer.BIRTH_DATE, OVO.VISIT_START_DATE) as Age_at_Admit
 
 into
@@ -98,7 +98,7 @@ from
 	REF_PERSON_NAMES AS RefPer
 		ON OPer.PERSON_SOURCE_VALUE = RefPer.MRN
 where 
-=======
+
 	--, datediff(YYYY,OPer.BIRTH_DATETIME, OVO.VISIT_START_DATE) as Age_at_Admit
 	--, date_part('year', age(OVO.VISIT_START_DATE, OPer.BIRTH_DATETIME)) as Age_at_Admit	--Netezza SQL
 --chad starts using temp tables
@@ -136,7 +136,7 @@ from
 		------------------
 
 		where 
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
 	OVO.VISIT_CONCEPT_ID = 9201 --Inpatient
 	and 
 		(
@@ -151,7 +151,7 @@ from
 	--is being used to identify principal diagnosis. This may need to be reworked in the
 	--Vanderbilt implementation of OMOP to exclude the CONDITION_STATUS_CONCEPT_ID because
 	--the current implementation seems to be nonstandard.
-<<<<<<< HEAD
+
 		*/
 	and cast(convert(char(11), OVO.Visit_end_date, 113) as datetime) >= '2007-011-01 00:00:00.000'
 	and cast(convert(char(11), OVO.VISIT_END_DATE, 113) as datetime)  <= '2017-011-01 00:00:00.000'
@@ -160,14 +160,14 @@ from
 
 ;
 
-=======
+
 	*/
 	--and OVO.VISIT_END_DATE >= '20070101'
 	--and OVO.VISIT_END_DATE < '20170101'
 	--and RefDiag.DIAGNOSIS = 'AMI'
 --;Build_Index
 --------------------------------------------------------
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
 
 select
 	*
@@ -180,7 +180,7 @@ from
 			,ROW_NUMBER() OVER (PARTITION BY PERSON_ID ORDER BY ADMIT_DATE ASC, Prim_Diag ASC) AS Date_Row
 		from
 			#COHORT_BASE_part1
-<<<<<<< HEAD
+
 			--AMI.COHORT_BASE_part1	--Netezza SQL
 	) sub
 where Date_Row = 1
@@ -189,8 +189,8 @@ where Date_Row = 1
 drop table #COHORT_BASE_part1
 ;
 --End of PART 1--------------------------------------------------------------------------
-=======
+
 			
 	) sub
 where Date_Row = 1
->>>>>>> 275e6ba51344d44ebab09dec585938a45498e654
+
