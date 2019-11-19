@@ -112,4 +112,8 @@ from
 	) sub
 where Date_Row = 1
 ;
+
+--now clean up
+
+DROP TABLE #COHORT_BASE_part1
 --End of PART 1--------------------
