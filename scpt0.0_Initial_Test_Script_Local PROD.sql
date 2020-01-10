@@ -20,7 +20,7 @@ select distinct
 	, OCon2.CONCEPT_NAME as RACE
 	, OCon3.CONCEPT_NAME as ETHNICITY
 	, OLoc.ZIP as ZIPCODE
-	INTO #AMICOHORTBASE
+INTO #AMICOHORTBASE
 from 
 	VISIT_OCCURRENCE as OVO
 	left join 
@@ -60,6 +60,7 @@ where
 			,4296653
 			,4270024
 		) 
+		
 		/*
 		limit 1000
 ;
