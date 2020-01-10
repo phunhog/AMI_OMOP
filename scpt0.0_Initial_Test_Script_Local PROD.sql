@@ -44,6 +44,7 @@ from
 where 
 	OVO.VISIT_CONCEPT_ID = 9201 --Inpatient
 	and OCO.CONDITION_TYPE_CONCEPT_ID = '38000200' --Inpatient Header first position
+
 	and OCO.Condition_Concept_ID IN --All of the target concept_IDs for AMI (reference below)
 		(
 			438438
@@ -60,6 +61,8 @@ where
 			,4296653
 			,4270024
 		) 
+		
+		order by PERSON_ID, VISIT_OCCURRENCE_ID
 		
 		/*
 		limit 1000
