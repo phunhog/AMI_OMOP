@@ -147,8 +147,8 @@ UNION
 		left join
 		Ref_Person_SSN as ASSN
 			ON ACB.MRN = ASSN.MRN
-	where 
-		discharge_date < '1/1/2017'
+	--where 
+		--discharge_date < '1/1/2017'
 )
 ;
 --End------------------------------------------------------------------------------
