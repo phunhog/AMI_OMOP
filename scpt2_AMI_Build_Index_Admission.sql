@@ -6,6 +6,12 @@ the first AMI encounter, where the primary diagnosis is AMI within the specified
 */
 -----------------------------------------------------------------------------------------
 
+/*
+-- update 2020 01 10
+dropped 1 where clause item and now I get my whole cohort 10/1/2015 to 2020
+n=2946 index primary AMI's
+*/
+
 USE OMOP_CDM
 GO
 
@@ -93,7 +99,9 @@ where
 	--the current implementation seems to be nonstandard.
 	*/
 	and cast(convert(char(11), OVO.Visit_end_date, 113) as datetime) >= '2007-011-01 00:00:00.000'
-	and cast(convert(char(11), OVO.VISIT_END_DATE, 113) as datetime)  <= '2017-011-01 00:00:00.000'
+	-- drop this and all cases 10/1/2015 to 202 cpme through
+
+	--and cast(convert(char(11), OVO.VISIT_END_DATE, 113) as datetime)  <= '2017-011-01 00:00:00.000'
 	and RefDiag.DIAGNOSIS = 'AMI'
 ;
 
