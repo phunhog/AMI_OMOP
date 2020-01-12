@@ -1,0 +1,11 @@
+SQLCMD AMI OMOP build script kick off @Jan 11 2020  1:19AM
+2976 rows appended to location at Jan 11 2020  1:22AM
+43 rows appended to care_site at Jan 11 2020  1:22AM
+130 rows appended to provider atJan 11 2020  1:29AM
+2946 rows appended to person at Jan 11 2020  3:48AM
+5293 rows appended to visit_occurence at Jan 11 2020  3:48AM
+74744 rows appended to condition_occurence at Jan 11 2020  3:52AM
+170515 rows appended to Procedure_occurence at Jan 11 2020  4:58AM
+86318 rows appended to drug_exposure at Jan 11 2020  6:03AM
+431287 rows appended to measurement at Jan 11 2020  8:20AM
+SQLCMD successfully executed Jan 11 2020  8:20AM
