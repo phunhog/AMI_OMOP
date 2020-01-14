@@ -7,4 +7,3 @@ cd \Windows\system32
 SQLCMD -S DH5772\RSR -E -d OMOP_CDM -Q "uspOMOPBuild" -o D:\GitRepos\AMI_OMOP\OMOP_Build\SQLCMDLog.txt
 
 REM End
-EXIT
