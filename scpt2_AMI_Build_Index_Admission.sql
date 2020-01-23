@@ -64,7 +64,7 @@ from
 	left join 
 	PERSON as OPer
 		on OVO.PERSON_ID = OPer.PERSON_ID
-	join
+	left outer join
 	REF_DIAG_CODES as RefDiag
 		on OCO.Condition_Concept_ID = RefDiag.Target_Concept_ID
 	left join
@@ -84,12 +84,19 @@ from
 		ON OPer.PERSON_SOURCE_VALUE = RefPer.MRN
 where 
 	OVO.VISIT_CONCEPT_ID = 9201 --Inpatient
+
+
+	/*
+     01/22/2020 cvomment this out to get cases coded with ICD-9
 	and 
 		(
 			OCO.CONDITION_TYPE_CONCEPT_ID = '38000200' 		--Inpatient Header first position
 			OR OCO.CONDITION_TYPE_CONCEPT_ID = '38000199' 	--Inpatient Header - Primary
 		)
 		
+		*/
+
+
 	--Specific to VUMC OMOP implementation
 	--and OCO.CONDITION_STATUS_CONCEPT_ID = '4230359' 		--Final Diagnosis
 	/*
@@ -102,7 +109,10 @@ where
 	-- drop this and all cases 10/1/2015 to 202 cpme through
 
 	--and cast(convert(char(11), OVO.VISIT_END_DATE, 113) as datetime)  <= '2017-011-01 00:00:00.000'
-	and RefDiag.DIAGNOSIS = 'AMI'
+
+
+	-- 01/22/2020 comment this out to and get all 6459 rows
+	--and RefDiag.DIAGNOSIS = 'AMI'
 ;
 
 select
