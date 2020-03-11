@@ -125,7 +125,9 @@ UNION
 	      ,ACB.GENDER
 	      ,ACB.RACE
 	      ,ACB.ETHNICITY
-	      ,ASSN.MRN
+		  --error here
+		  --ASSN.MRN
+	      ,ASSN.SSN
 		  ,ACB.ZIPCODE
 	      ,ACB.FIRST_NAME
 	      ,ACB.LAST_NAME
