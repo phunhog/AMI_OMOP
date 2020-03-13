@@ -5,6 +5,13 @@
 
 --Initial test script
 --This script pulls all of the AMI patients, some visit dates, and some demographic info
+/*
+comprehensive update 3/13/2020
+this is the working copy to be used on the dartmouth OMOP
+
+JH Higgins MS
+
+*/
 
 select distinct
 	OVO.VISIT_OCCURRENCE_ID as VISIT_OCCURRENCE_ID
