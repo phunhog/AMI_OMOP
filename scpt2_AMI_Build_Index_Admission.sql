@@ -12,6 +12,14 @@ dropped 1 where clause item and now I get my whole cohort 10/1/2015 to 2020
 n=2946 index primary AMI's
 */
 
+/*
+comprehensive update 3/13/2020
+this is the working copy to be used on the dartmouth OMOP
+
+JH Higgins MS
+
+*/
+
 USE OMOP_CDM
 GO
 
@@ -105,6 +113,7 @@ where
 	--Vanderbilt implementation of OMOP to exclude the CONDITION_STATUS_CONCEPT_ID because
 	--the current implementation seems to be nonstandard.
 	*/
+	-- this is correct update 3/13/2020
 	and cast(convert(char(11), OVO.Visit_end_date, 113) as datetime) >= '2007-011-01 00:00:00.000'
 	-- drop this and all cases 10/1/2015 to 202 cpme through
 
