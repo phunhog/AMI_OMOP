@@ -35,6 +35,13 @@ from
 -------------------------------------------
 */
 
+/*
+comprehensive update 3/13/2020
+this is the working copy to be used on the dartmouth OMOP
+
+JH Higgins MS
+
+*/
 
 -- Begin DH code
 Use OMOP_CDM

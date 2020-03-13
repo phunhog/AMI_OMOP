@@ -25,6 +25,14 @@ PART 0: Create preliminary reference table for diagnoses
 */
 -----------------------------------------------------------------------------------------
 
+/*
+comprehensive update 3/13/2020
+this is the working copy to be used on the dartmouth OMOP
+
+JH Higgins MS
+
+*/
+
 
 Use OMOP_CDM
 
