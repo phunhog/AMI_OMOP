@@ -15,6 +15,11 @@ Serum markers hematocrit or hemoglobin
 Blood urea nitrogen or creatinine
 Brain Natriuretic Peptide (BNP)
 */
+
+/*
+Update 4/10/2020-- code edited to match Dartmouth OMOP obj names
+*/
+
 -----------------------------------------------------------------------------------------
 
 
@@ -24,34 +29,46 @@ Brain Natriuretic Peptide (BNP)
 --------------------------------------------------------------------------------
 --3019550 =	Sodium serum/plasma
 
+USE OMOP_CDM
+go
 
-drop table if exists #Table1_Laboratories_Sodium_Level_Flag_0
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Sodium_Level_Flag_0', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Sodium_Level_Flag_0
+END
 ;
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, OM.MEASUREMENT_DATETIME
+	, Convert(varchar(50),OM.MEASUREMENT_TIME) as measurement_time
 	, CAST(OM.VALUE_AS_NUMBER AS Float) as VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_MEASUREMENT_SOURCE_VALUE
-	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_Unit_Source_Value
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME)  DESC) AS Last_MEASUREMENT_SOURCE_VALUE
+	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_Unit_Source_Value
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME)) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_VALUE_AS_NUMBER
 into 
 	#Table1_Laboratories_Sodium_Level_Flag_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as OM
+	Measurement as OM
 		on CB2.PERSON_ID = OM.PERSON_ID
-		and OM.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		-- Dartmouth OMOP  OMOP_CDM.Measurement_time
+		and Convert(varchar(50),OM.MEASUREMENT_TIME)between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
-	OM.Measurement_Concept_ID IN (3019550, 3000285)
+	Measurement_Concept_ID IN (3019550, 3000285)
 	and OM.VALUE_AS_NUMBER IS NOT NULL
 	and OM.VALUE_AS_NUMBER <> ''
 ;
 
 
-drop table if exists #Table1_Laboratories_Sodium_Level_Flag_1
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Sodium_Level_Flag_1', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Sodium_Level_Flag_1
+END
 ;
 select distinct
 	  PERSON_ID
@@ -77,7 +94,14 @@ group by
 ;
 
 
-drop table if exists #Table1_Laboratories_Sodium_Level_Flag
+--drop table if exists #Table1_Laboratories_Sodium_Level_Flag--vandy drop code no worky
+
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Sodium_Level_Flag', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Sodium_Level_Flag
+END
+
 ;
 select distinct
 	  CB2.PERSON_ID
@@ -99,7 +123,8 @@ select distinct
 into 
 	#Table1_Laboratories_Sodium_Level_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_Laboratories_Sodium_Level_Flag_1 AS S
 		on CB2.VISIT_OCCURRENCE_ID = S.VISIT_OCCURRENCE_ID
@@ -115,25 +140,32 @@ from
 --3006906 =	Calcium serum/plasma
 
 
-drop table if exists #Table1_Laboratories_Calcium_Level_0
+--drop table if exists #Table1_Laboratories_Calcium_Level_0
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Calcium_Level_0', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Calcium_Level_0
+END
+  
 ;
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, OM.MEASUREMENT_DATETIME
+	, Convert(varchar(50),OM.MEASUREMENT_TIME) as measurement_time
 	, CAST(OM.VALUE_AS_NUMBER AS Float) as VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_MEASUREMENT_SOURCE_VALUE
-	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_Unit_Source_Value
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_MEASUREMENT_SOURCE_VALUE
+	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_Unit_Source_Value
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME)) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_VALUE_AS_NUMBER
 into 
 	#Table1_Laboratories_Calcium_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as OM
+	--OMOP.Measurement as OM
+	Measurement as OM
 		on CB2.PERSON_ID = OM.PERSON_ID
-		and OM.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
 	OM.Measurement_Concept_ID IN (3006906, 3036426)
 	and OM.VALUE_AS_NUMBER IS NOT NULL
@@ -141,7 +173,12 @@ where
 ;
 
 
-drop table if exists #Table1_Laboratories_Calcium_Level_1
+--drop table if exists #Table1_Laboratories_Calcium_Level_1
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Calcium_Level_1', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Calcium_Level_1
+END
 ;
 select
 	  PERSON_ID
@@ -167,7 +204,14 @@ group by
 ;
 
 
-drop table if exists #Table1_Laboratories_Calcium_Level_Flag
+--drop table if exists #Table1_Laboratories_Calcium_Level_Flag
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Calcium_Level_Flag', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Calcium_Level_Flag
+END
+
+
 ;
 
 select 
@@ -190,7 +234,7 @@ select
 into 
 	#Table1_Laboratories_Calcium_Level_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_Laboratories_Calcium_Level_1 AS C
 		on CB2.VISIT_OCCURRENCE_ID = C.VISIT_OCCURRENCE_ID
@@ -207,25 +251,30 @@ from
 --3016723 = Creatinine serum plasma: mg/dL
 
 
-drop table if exists #Table1_Laboratories_Creatinine_Level_0
+--drop table if exists #Table1_Laboratories_Creatinine_Level_0
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Creatinine_Level_0', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Creatinine_Level_0
+END
 ;
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, OM.MEASUREMENT_DATETIME
+	, Convert(varchar(50),Convert(varchar(50),OM.MEASUREMENT_TIME)) measurment_time
 	, CAST(OM.VALUE_AS_NUMBER AS Float) as VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_MEASUREMENT_SOURCE_VALUE
-	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_Unit_Source_Value
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),Convert(varchar(50),OM.MEASUREMENT_TIME)) DESC) AS Last_MEASUREMENT_SOURCE_VALUE
+	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),Convert(varchar(50),OM.MEASUREMENT_TIME)) DESC) AS Last_Unit_Source_Value
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),Convert(varchar(50),OM.MEASUREMENT_TIME))) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),Convert(varchar(50),OM.MEASUREMENT_TIME)) DESC) AS Last_VALUE_AS_NUMBER
 into 
 	#Table1_Laboratories_Creatinine_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as OM
+	Measurement as OM
 		on CB2.PERSON_ID = OM.PERSON_ID
-		and OM.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and Convert(varchar(50),Convert(varchar(50),OM.MEASUREMENT_TIME)) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
 	OM.Measurement_Concept_ID IN (3051825, 3016723)
 	and OM.VALUE_AS_NUMBER IS NOT NULL
@@ -235,7 +284,12 @@ where
 ;
 
 
-drop table if exists #Table1_Laboratories_Creatinine_Level_1
+--drop table if exists #Table1_Laboratories_Creatinine_Level_1
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Creatinine_Level_1', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Creatinine_Level_1
+END
 ;
 select distinct
 	  PERSON_ID
@@ -261,7 +315,12 @@ group by
 ;
 
 
-drop table if exists #Table1_Laboratories_Creatinine_Level
+--drop table if exists #Table1_Laboratories_Creatinine_Level
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Creatinine_Level', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Creatinine_Level
+END
 ;
 select distinct
 	  CB2.PERSON_ID
@@ -276,13 +335,13 @@ select distinct
 into 
 	#Table1_Laboratories_Creatinine_Level
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_Laboratories_Creatinine_Level_1 AS C
 		on CB2.VISIT_OCCURRENCE_ID = C.VISIT_OCCURRENCE_ID
 ;
 
---select top 1000 * from #Table1_Laboratories_Creatinine_Level;
+--select  * from #Table1_Laboratories_Creatinine_Level;
 
 
 
@@ -292,25 +351,31 @@ from
 --3000963 =	Hemoglobin (Hgb)
 
 
-drop table if exists #Table1_Laboratories_Hemoglobin_Level_0
+--drop table if exists #Table1_Laboratories_Hemoglobin_Level_0
+
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Hemoglobin_Level_0', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Hemoglobin_Level_0
+END
 ;
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, OM.MEASUREMENT_DATETIME
+	, Convert(varchar(50),OM.MEASUREMENT_TIME) MEASUREMENT_TIME
 	, CAST(OM.VALUE_AS_NUMBER AS Float) as VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_MEASUREMENT_SOURCE_VALUE
-	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_Unit_Source_Value
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_MEASUREMENT_SOURCE_VALUE
+	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_Unit_Source_Value
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME)) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_VALUE_AS_NUMBER
 into 
 	#Table1_Laboratories_Hemoglobin_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as OM
+	Measurement as OM
 		on CB2.PERSON_ID = OM.PERSON_ID
-		and OM.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
 	OM.Measurement_Concept_ID = 3000963
 	and OM.VALUE_AS_NUMBER IS NOT NULL
@@ -320,7 +385,12 @@ where
 ;
 
 
-drop table if exists #Table1_Laboratories_Hemoglobin_Level_1
+--drop table if exists #Table1_Laboratories_Hemoglobin_Level_1
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Hemoglobin_Level_1', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Hemoglobin_Level_1
+END
 ;
 select
 	  PERSON_ID
@@ -346,7 +416,12 @@ group by
 ;
 
 
-drop table if exists #Table1_Laboratories_Hemoglobin_Level
+--drop table if exists #Table1_Laboratories_Hemoglobin_Level
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_Hemoglobin_Level', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_Hemoglobin_Level
+END
 ;
 select 
 	  CB2.PERSON_ID
@@ -361,13 +436,13 @@ select
 into 
 	#Table1_Laboratories_Hemoglobin_Level
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_Laboratories_Hemoglobin_Level_1 AS H
 		on CB2.VISIT_OCCURRENCE_ID = H.VISIT_OCCURRENCE_ID
 ;
 
---select top 1000 * from #Table1_Laboratories_Hemoglobin_Level;
+select top 1000 * from #Table1_Laboratories_Hemoglobin_Level;
 
 
 
@@ -375,27 +450,43 @@ from
 --Peak creatine kinase/troponin
 --------------------------------------------------------------------------------
 --3030170	Creatine kinase [Mass/volume] in Blood
+--here at 12:52
+
+--
 
 
-drop table if exists #Table1_Laboratories_CK_Level_0
+/*
+recoded 4/14/2020 but DHMC returns 0 cases ?? why?
+
+*/
+
+
+
+--drop table if exists #Table1_Laboratories_CK_Level_0
+IF OBJECT_ID('tempdb..#Table1_Laboratories_CK_Level_0', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_CK_Level_0
+END
+
 ;
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, OM.MEASUREMENT_DATETIME
+	, Convert(varchar(50),OM.MEASUREMENT_TIME) measurement_time
 	, CAST(OM.VALUE_AS_NUMBER AS Float) as VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_MEASUREMENT_SOURCE_VALUE
-	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_Unit_Source_Value
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_MEASUREMENT_SOURCE_VALUE
+	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_Unit_Source_Value
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME)) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_VALUE_AS_NUMBER
 into 
 	#Table1_Laboratories_CK_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as OM
+	Measurement as OM
 		on CB2.PERSON_ID = OM.PERSON_ID
-		and OM.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
 	OM.Measurement_Concept_ID = 3005785
 	and OM.VALUE_AS_NUMBER IS NOT NULL
@@ -405,7 +496,12 @@ where
 ;
 
 
-drop table if exists #Table1_Laboratories_CK_Level_1
+--drop table if exists #Table1_Laboratories_CK_Level_1
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_CK_Level_1', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_CK_Level_1
+END
 ;
 select
 	  PERSON_ID
@@ -431,7 +527,12 @@ group by
 ;
 
 
-drop table if exists #Table1_Laboratories_CK_Level
+--drop table if exists #Table1_Laboratories_CK_Level
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_CK_Level', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_CK_Level
+END
 ;
 select 
 	  CB2.PERSON_ID
@@ -446,13 +547,13 @@ select
 into 
 	#Table1_Laboratories_CK_Level
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_Laboratories_CK_Level_1 AS CK
 		on CB2.VISIT_OCCURRENCE_ID = CK.VISIT_OCCURRENCE_ID
 ;
 
---select top 1000 * from #Table1_Laboratories_CK_Level;
+select top 1000 * from #Table1_Laboratories_CK_Level;
 
 
 
@@ -463,26 +564,39 @@ from
 --3031569		Natriuretic peptide B [Mass/volume] in Blood
 --3011960		Natriuretic peptide B [Mass/volume] in Serum or Plasma
 
+/*
 
-drop table if exists #Table1_Laboratories_BNP_Level_0
+similar to CPK Dartmouth returns 0 for BNP
+
+*/
+
+--drop table if exists #Table1_Laboratories_BNP_Level_0
+
+
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_BNP_Level_0', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_BNP_Level_0
+END
 ;
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, OM.MEASUREMENT_DATETIME
+	, Convert(varchar(50),OM.MEASUREMENT_TIME) MEASUREMENT_TIME
 	, CAST(OM.VALUE_AS_NUMBER AS Float) as VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_MEASUREMENT_SOURCE_VALUE
-	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_Unit_Source_Value
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY OM.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.MEASUREMENT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_MEASUREMENT_SOURCE_VALUE
+	, FIRST_VALUE(OM.UNIT_SOURCE_VALUE) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_Unit_Source_Value
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME)) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(OM.VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY Convert(varchar(50),OM.MEASUREMENT_TIME) DESC) AS Last_VALUE_AS_NUMBER
 into 
 	#Table1_Laboratories_BNP_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as OM
+	Measurement as OM
 		on CB2.PERSON_ID = OM.PERSON_ID
-		and OM.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
 	OM.Measurement_Concept_ID IN (3011960)
 	and OM.VALUE_AS_NUMBER IS NOT NULL
@@ -492,7 +606,12 @@ where
 ;
 
 
-drop table if exists #Table1_Laboratories_BNP_Level_1
+--drop table if exists #Table1_Laboratories_BNP_Level_1
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_BNP_Level_1', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_BNP_Level_1
+END
 ;
 select
 	  PERSON_ID
@@ -518,7 +637,13 @@ group by
 ;
 
 
-drop table if exists #Table1_Laboratories_BNP_Level
+--drop table if exists #Table1_Laboratories_BNP_Level
+
+IF OBJECT_ID('tempdb..#Table1_Laboratories_BNP_Level', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #Table1_Laboratories_BNP_Level
+END
+
 ;
 select 
 	  CB2.PERSON_ID
@@ -533,13 +658,13 @@ select
 into 
 	#Table1_Laboratories_BNP_Level
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_Laboratories_BNP_Level_1 AS BNP
 		on CB2.VISIT_OCCURRENCE_ID = BNP.VISIT_OCCURRENCE_ID
 ;
 
---select top 1000 * from #Table1_Laboratories_BNP_Level;
+select top 1000 * from #Table1_Laboratories_BNP_Level;
 
 
 
@@ -547,7 +672,12 @@ from
 --Join the temp tables
 -------------------------------------------------------------------
 
-drop table if exists Table1_Laboratories
+--drop table if exists Table1_Laboratories
+
+IF OBJECT_ID('Table1_Laboratories', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_Laboratories
+END
 ;
 select
 	  S.PERSON_ID
@@ -609,6 +739,6 @@ from
 
 --END-------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------
---select count(distinct person_id) from Table1_Laboratories;
+select count(distinct person_id) from Table1_Laboratories;
 
---select count(distinct VISIT_OCCURRENCE_ID) from Table1_Laboratories;
+select count(distinct VISIT_OCCURRENCE_ID) from Table1_Laboratories;
