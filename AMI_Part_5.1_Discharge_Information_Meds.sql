@@ -14,10 +14,24 @@ ACE or ARB inhibitors combined at discharge
 
 --Part 1:
 --Build reference table for discharge medications: Ref_Discharge_Medications
-USE AMI
+
+
+/*
+update 4/17/2020 J Higgins edited to match Dartmouth OMOP object names
+*/
+USE 
+--AMI
+OMOP_CDM
 GO
 
-drop table if exists AMI.Ref_Discharge_Medications;
+--drop table if exists AMI.Ref_Discharge_Medications;
+
+
+
+IF OBJECT_ID('Ref_Discharge_Medications', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  Ref_Discharge_Medications
+END
 GO
 
 select 
@@ -273,9 +287,10 @@ select
 		THEN 1
 		Else 0
 	 End as Rashmee_List_Flag
-into AMI.Ref_Discharge_Medications
+into Ref_Discharge_Medications
 from 
-	OMOP.CONCEPT
+	--OMOP.CONCEPT
+	CONCEPT
 where 
 	standard_concept = 'S'
 	and domain_id = 'Drug'
@@ -455,7 +470,17 @@ where
 --Medication list entry										3				Drug Type
 --Patient Self-Reported Medication							3				Drug Type
 
-drop table if exists AMI.Ref_Discharge_Med_Methodology;
+
+
+--drop table if exists AMI.Ref_Discharge_Med_Methodology;
+
+
+
+
+IF OBJECT_ID('Ref_Discharge_Med_Methodology', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Ref_Discharge_Med_Methodology
+END
 GO
 
 select
@@ -482,9 +507,11 @@ select
 			)
 		THEN 3
 	 END as Discharge_Med_Methodology
-into AMI.Ref_Discharge_Med_Methodology
+--into AMI.Ref_Discharge_Med_Methodology
+into Ref_Discharge_Med_Methodology
 from 
-	OMOP.CONCEPT
+	--OMOP.CONCEPT
+	CONCEPT
 where
 	Concept_Name IN
 	(
@@ -501,7 +528,15 @@ where
 
 --Part 3
 --Get discharge medications for applicable encounters
-drop table if exists #AMI_Discharge_Medications_for_CB2;
+
+
+---------------------------------------------------------------------------------------------------------------
+--drop table if exists #AMI_Discharge_Medications_for_CB2;
+
+IF OBJECT_ID('tempdb..#AMI_Discharge_Medications_for_CB2', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_Discharge_Medications_for_CB2
+END
 GO
 
 select 
@@ -513,8 +548,10 @@ select
 	,CB2.Discharge_Date
 	,CB2.Discharge_DateTime
 	,DE.DRUG_EXPOSURE_START_DATE
-	,DE.DRUG_EXPOSURE_START_DATETIME
-	--,extract(epoch from (CB2.Discharge_DateTime - DE.DRUG_EXPOSURE_START_DATETIME))/60 as Discharge_Med_Timing
+	--Datetime not recorded in OMOP_cdm but it's not really needed here
+	--so I just drop the field
+	--,DE.DRUG_EXPOSURE_START_DATETIME
+	
 	,DM.CONCEPT_NAME as DRUG_NAME
 	,DMM.CONCEPT_NAME as DRUG_TYPE_NAME
 	,DM.MEDICATION_CATEGORY
@@ -548,14 +585,14 @@ select
 	,DE.DRUG_CONCEPT_ID
 	,DE.DRUG_TYPE_CONCEPT_ID
 into
-	#AMI_Discharge_Medications_for_CB2
-from AMI.COHORT_BASE_2 as CB2
-	left join OMOP.DRUG_EXPOSURE AS DE
+  #AMI_Discharge_Medications_for_CB2
+from COHORT_BASE_2 as CB2
+	left join DRUG_EXPOSURE AS DE
 		on CB2.Person_ID = DE.Person_ID
 		and DE.DRUG_EXPOSURE_START_DATE between dateadd(dd, -1, CB2.Discharge_Date) and dateadd(dd, 1, CB2.Discharge_Date)
-	left join AMI.REF_DISCHARGE_MEDICATIONS as DM
+	left join REF_DISCHARGE_MEDICATIONS as DM
 		on DE.DRUG_CONCEPT_ID = DM.CONCEPT_ID
-	left join AMI.REF_DISCHARGE_MED_METHODOLOGY as DMM
+	left join REF_DISCHARGE_MED_METHODOLOGY as DMM
 		on DE.DRUG_TYPE_CONCEPT_ID = DMM.CONCEPT_ID	
 where
 	DM.CONCEPT_ID IS NOT NULL
@@ -568,7 +605,7 @@ group by
 	,CB2.Discharge_date
 	,CB2.Discharge_DateTime
 	,DE.DRUG_EXPOSURE_START_DATE
-	,DE.DRUG_EXPOSURE_START_DATETIME
+	--,DE.DRUG_EXPOSURE_START_DATETIME
 	,DM.CONCEPT_NAME
 	,DMM.CONCEPT_NAME
 	,DM.MEDICATION_CATEGORY
@@ -591,7 +628,12 @@ order by
 
 --Part 4:
 --Assign flags for discharge meds
-drop table if exists #AMI_DISCHARGE_MED_Flags_FOR_CB2;
+--drop table if exists #AMI_DISCHARGE_MED_Flags_FOR_CB2;
+
+IF OBJECT_ID('tempdb..#AMI_DISCHARGE_MED_Flags_FOR_CB2', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_DISCHARGE_MED_Flags_FOR_CB2
+END
 
 SELECT
 		PERSON_ID
@@ -743,7 +785,12 @@ Group by
 --Part 5:
 --Get BB summary data
 
-drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_BB;
+--drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_BB;
+
+IF OBJECT_ID('tempdb..#AMI_DISCHARGE_MED_FLAGS_Grouped_BB', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_DISCHARGE_MED_FLAGS_Grouped_BB
+END
 
 SELECT
 	 PERSON_ID
@@ -774,7 +821,12 @@ Group by
 --Part 6:
 --Get Antidep summary data
 
-drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_Antidep;
+--drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_Antidep;
+
+IF OBJECT_ID('tempdb..#AMI_DISCHARGE_MED_FLAGS_Grouped_Antidep', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_DISCHARGE_MED_FLAGS_Grouped_Antidep
+END
 
 SELECT
 	 PERSON_ID
@@ -805,7 +857,12 @@ Group by
 --Part 7:
 --Get ACE ARB summary data
 
-drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_ACE_ARB;
+--drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_ACE_ARB;
+
+IF OBJECT_ID('tempdb..#AMI_DISCHARGE_MED_FLAGS_Grouped_ACE_ARB', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_DISCHARGE_MED_FLAGS_Grouped_ACE_ARB
+END
 
 SELECT
 	 PERSON_ID
@@ -836,7 +893,14 @@ Group by
 --Part 8:
 --Get Aspirin summary data
 
-drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_Aspirin;
+--drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_Aspirin;
+
+IF OBJECT_ID('tempdb..#AMI_DISCHARGE_MED_FLAGS_Grouped_Aspirin', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_DISCHARGE_MED_FLAGS_Grouped_Aspirin
+END
+
+
 
 SELECT
 	 PERSON_ID
@@ -865,7 +929,13 @@ Group by
 
 
 --Get Statin summary data
-drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_Statin;
+--drop table if exists #AMI_DISCHARGE_MED_FLAGS_Grouped_Statin;
+
+IF OBJECT_ID('tempdb..#AMI_DISCHARGE_MED_FLAGS_Grouped_Statin', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE #AMI_DISCHARGE_MED_FLAGS_Grouped_Statin
+END
+
 
 SELECT
 	 PERSON_ID
@@ -896,7 +966,12 @@ Group by
 --Part 9:
 --Combine variables for discharge meds
 
-drop table if exists AMI.Table1_Discharge_Information_Meds;
+--drop table if exists AMI.Table1_Discharge_Information_Meds;
+
+IF OBJECT_ID('Table1_Discharge_Information_Meds', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_Discharge_Information_Meds
+END
 
 select
 	 CB2.Person_ID
@@ -956,9 +1031,9 @@ select
 		ELSE 0
 	 END as DISCH_MED_STATIN_Method
 into
-	AMI.Table1_Discharge_Information_Meds
+	Table1_Discharge_Information_Meds
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AMI_DISCHARGE_MED_FLAGS_Grouped_BB as BB
 		on CB2.VISIT_OCCURRENCE_ID = BB.VISIT_OCCURRENCE_ID
 	left join #AMI_DISCHARGE_MED_FLAGS_Grouped_Antidep as A
