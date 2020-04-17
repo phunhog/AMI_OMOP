@@ -23,9 +23,22 @@ ACE or ARB inhibitors combined at discharge
 
 -----------------------------------------------------------------------------------------
 --Unstable angina
+
+/*
+update 4/17/2020
+Code edited to match Dartmouth object names
+
+*/
 -----------------------------------------------------------------------------------------
 
-drop table if exists #Table1_Discharge_Information_Unstable_Angina_Flag
+--drop table if exists #Table1_Discharge_Information_Unstable_Angina_Flag
+
+
+IF OBJECT_ID('tempdb..#Table1_Discharge_Information_Unstable_Angina_Flag', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  #Table1_Discharge_Information_Unstable_Angina_Flag
+END
+
 ;
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -34,14 +47,17 @@ select CB2.PERSON_ID
 	, MAX(case when Ref.conditionid IN (53)	then 1 else 0 end) as Unstable_Angina_Flag
 into #Table1_Discharge_Information_Unstable_Angina_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	[OMOP].[CONDITION_OCCURRENCE] as OCO	
+	--[OMOP].[CONDITION_OCCURRENCE] as OCO
+	[CONDITION_OCCURRENCE] as OCO		
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = OCO.VISIT_OCCURRENCE_ID
 		--AND OCO.CONDITION_START_DATE = CB2.ADMIT_DATE
 	left join
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	--[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on OCO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by
 	  CB2.PERSON_ID
@@ -56,7 +72,12 @@ group by
 --STEMI and NSTEMI
 -----------------------------------------------------------------------------------------
 
-drop table if exists #Table1_Discharge_Information_STEMI_Flag
+--drop table if exists #Table1_Discharge_Information_STEMI_Flag
+
+IF OBJECT_ID('tempdb..#Table1_Discharge_Information_STEMI_Flag', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  #Table1_Discharge_Information_STEMI_Flag
+END
 ;
 select 
 	  CB2.PERSON_ID
@@ -67,13 +88,13 @@ select
 	, MAX(case when Ref.conditionid IN (52)	then 1 else 0 end) as NSTEMI_Flag
 into #Table1_Discharge_Information_STEMI_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	[OMOP].[CONDITION_OCCURRENCE] as OCO	
+	[CONDITION_OCCURRENCE] as OCO	
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = OCO.VISIT_OCCURRENCE_ID
 	left join
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on OCO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by
 	  CB2.PERSON_ID
@@ -87,7 +108,14 @@ group by
 --combine temp tables
 -----------------------------------------------------------------------------------------
 
-drop table if exists Table1_Discharge_Information
+--
+
+--drop table if exists Table1_Discharge_Information
+
+IF OBJECT_ID('Table1_Discharge_Information', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  Table1_Discharge_Information
+END
 ;
 select 
 	 CB2.PERSON_ID
@@ -107,7 +135,7 @@ select
 into
 	Table1_Discharge_Information
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
 		#Table1_Discharge_Information_Unstable_Angina_Flag as UA
 		on CB2.PERSON_ID = UA.PERSON_ID
@@ -125,7 +153,7 @@ from
 
 --End---------------------------------------------------------------------------------------
 
-/* counts
+--/* counts
 select top 1000 * from Table1_Discharge_Information;
 
 select STEMI_Flag, count(*)
@@ -139,4 +167,4 @@ group by NSTEMI_Flag;
 select Unstable_Angina_Flag, count(*)
 from Table1_Discharge_Information
 group by Unstable_Angina_Flag;
-*/
+--*/
