@@ -28,6 +28,12 @@ ADMITTING_SOURCE_CONCEPT_ID		CONCEPT_NAME
 8717	Inpatient Hospital
 */
 
+/*
+Update 4/24/2020
+Edit object names to match local OMOP_CDM build at dartmouth
+finish on 4/27
+*/
+
 select 
 	CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -36,15 +42,17 @@ select
 	, CB2.DISCHARGE_DATE
 	,case 
 		when
-		VO.ADMITTING_SOURCE_CONCEPT_ID = 8717
+		--VO.ADMITTING_SOURCE_CONCEPT_ID = 8717
+		VO.admitted_from_concept_id = 8717
 		then 1
 		else 0
 	end as Transfer_Patient_Flag
 into #Table1_Presentation_Disease_Transfer_Patient_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-		OMOP.VISIT_OCCURRENCE AS VO
+		VISIT_OCCURRENCE AS VO
 		on CB2.VISIT_OCCURRENCE_ID = VO.VISIT_OCCURRENCE_ID
 ;
 
@@ -57,9 +65,15 @@ group by Transfer_Patient_Flag;
 --------------------------------------------------------------------------------
 --Chest Pain and Cardiac Arrest
 --------------------------------------------------------------------------------
-drop table if exists #Table1_Presentation_Disease_1;
-GO
+--drop table if exists #Table1_Presentation_Disease_1;
+--GO
 
+
+--IF OBJECT_ID('#Table1_Presentation_Disease_1', 'U') IS NOT NULL 
+--BEGIN
+  --DROP TABLE  #Table1_Presentation_Disease_1
+--END
+--GO
 select 
 	CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -67,15 +81,15 @@ select
 	, CB2.PRIM_DIAG
 	, MAX(case when R.ConditionID = 1003 then 1 else 0 end) as Chest_Pain_Flag
 	, MAX(case when R.ConditionID = 202	then 1 else 0 end) as Cardiac_Arrest_Flag
-into #Table1_Presentation_Disease_1
+into  #Table1_Presentation_Disease_1
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as CO
+	CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 			and CB2.VISIT_OCCURRENCE_ID = CO.VISIT_OCCURRENCE_ID
 	left join 
-	AMI.Ref_Conditions_SNOMED as R
+	Ref_Conditions_SNOMED as R
 		on CO.CONDITION_CONCEPT_ID = R.TARGET_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG;
 
@@ -95,13 +109,13 @@ select CB2.PERSON_ID
 	, MAX(case when R.CONDITIONID = 1018 then 1 else 0 end) as Revascularization_Flag
 into #Table1_Presentation_Disease_Revascularization_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	OMOP.PROCEDURE_OCCURRENCE as OPO
+	PROCEDURE_OCCURRENCE as OPO
 		on CB2.PERSON_ID = OPO.PERSON_ID
 			and CB2.VISIT_OCCURRENCE_ID = OPO.VISIT_OCCURRENCE_ID
 	left join 
-	AMI.REF_Conditions_SNOMED as R
+	REF_Conditions_SNOMED as R
 		on OPO.PROCEDURE_Concept_ID = R.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG;
 
@@ -139,17 +153,16 @@ select CB2.PERSON_ID
 			case when R.Target_Concept_ID = 4008625 then 1 else 0 end
 		) as Vessels_4_Flag
 into #Table1_Presentation_Disease_Vessels_Flag_Part1
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-		OMOP.PROCEDURE_OCCURRENCE as PO
+		PROCEDURE_OCCURRENCE as PO
 		on CB2.PERSON_ID = PO.PERSON_ID
 			and CB2.VISIT_OCCURRENCE_ID = PO.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Ref_Conditions_SNOMED as R
+		Ref_Conditions_SNOMED as R
 		on PO.PROCEDURE_Concept_ID = R.TARGET_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG;
-
-
+---------------------------------------------------------------------------------------------------------------
 select PERSON_ID
 	, VISIT_OCCURRENCE_ID
 	, ADMIT_DATE
@@ -200,15 +213,17 @@ select CB2.PERSON_ID
 		end
 	  ) as Clopidogrel_Flag
 into #Table1_Presentation_Disease_Clopidogrel_Flag
-from AMI.COHORT_BASE_2 as CB2
+
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.DRUG_EXPOSURE as DE
+	DRUG_EXPOSURE as DE
 		on CB2.PERSON_ID = DE.PERSON_ID
 			and CB2.VISIT_OCCURRENCE_ID = DE.VISIT_OCCURRENCE_ID
 	left join
-	OMOP.Concept as OCon
+	Concept as OCon
 		on DE.DRUG_CONCEPT_ID = OCon.CONCEPT_ID
-where OCon.DOMAIN_ID = 'Drug' and OCon.VOCABULARY_ID = 'RxNorm' and OCon.STANDARD_CONCEPT = 'S'
+		--4/27/2020 had to comment this out to get cases returned
+--where OCon.DOMAIN_ID = 'Drug' and OCon.VOCABULARY_ID = 'RxNorm' and OCon.STANDARD_CONCEPT = 'S'
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG;
 
 
@@ -258,7 +273,8 @@ select
 	end as AMI_Location
 into #Table1_Presentation_Disease_AMI_Location
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 ;
 
 
@@ -271,7 +287,13 @@ from
 --Join the temp tables
 -------------------------------------------------------------------
 
-drop table if exists AMI.Table1_Presentation_Disease;
+--drop table if exists AMI.Table1_Presentation_Disease;
+
+IF OBJECT_ID('Table1_Presentation_Disease', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_Presentation_Disease
+END
+GO
 
 select
 	  T.PERSON_ID
@@ -287,7 +309,7 @@ select
 	, V.Vessels_Count
 	, C.Clopidogrel_Flag
 	, L.AMI_Location
-into AMI.Table1_Presentation_Disease
+into Table1_Presentation_Disease
 from 
 	#Table1_Presentation_Disease_Transfer_Patient_Flag AS T
 	left join
