@@ -22,6 +22,10 @@ Emergency-to-ward-transfers in the prior 30 days
 --Length of stay for index admission
 --------------------------------------------------------------------------
 
+/*
+update 4/28/2020 change obj names to fit Dartmouth OMOP_CDM
+*/
+
 select 
 	  PERSON_ID
 	, VISIT_OCCURRENCE_ID
@@ -31,7 +35,8 @@ select
 	, datediff(dd, ADMIT_DATE, DISCHARGE_DATE) + 1 as Index_LOS
 into #Table1_Admin_Data_Index_LOS_1
 from 
-	AMI.COHORT_BASE
+	--AMI.COHORT_BASE
+	COHORT_BASE
 ;
 
 select 
@@ -43,7 +48,8 @@ select
 	, Index_LOS.Index_LOS
 into #Table1_Admin_Data_Index_LOS
 from 
-	AMI.COHORT_BASE_2 as CB2
+	--AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	 left join #Table1_Admin_Data_Index_LOS_1 as Index_LOS
 	 on CB2.PERSON_ID = Index_LOS.PERSON_ID
 ;
@@ -61,8 +67,10 @@ select
 	, OVO.VISIT_END_DATE
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_ED_Visits
-from OMOP.VISIT_OCCURRENCE as OVO
-join AMI.COHORT_BASE_2 as CB2
+
+--from OMOP.VISIT_OCCURRENCE as OVO
+from VISIT_OCCURRENCE as OVO
+join COHORT_BASE_2 as CB2
 on OVO.PERSON_ID = CB2.PERSON_ID
 where
 	OVO.VISIT_CONCEPT_ID = 9203 --ED visit
@@ -92,7 +100,9 @@ select
 		else ED2.Qty
 	 end as ED_Visit_Prior_180_Days_Count
 into #Table1_Admin_Data_ED_Visit_Prior_180_Days_Count
-from AMI.Cohort_Base_2 as CB2
+
+--from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_ED_Visits_2 as ED2
 	on CB2.VISIT_OCCURRENCE_ID = ED2.INDEX_VISIT_ID
@@ -110,8 +120,10 @@ select
 	, OVO.VISIT_END_DATE
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_IP_Visits
-from OMOP.VISIT_OCCURRENCE as OVO
-join AMI.COHORT_BASE_2 as CB2
+
+--from OMOP.VISIT_OCCURRENCE as OVO
+from VISIT_OCCURRENCE as OVO
+join COHORT_BASE_2 as CB2
 on OVO.PERSON_ID = CB2.PERSON_ID
 where
 	OVO.VISIT_CONCEPT_ID = 9201 --IP visit
@@ -141,7 +153,7 @@ select
 		else IP2.Qty
 	 end as Admission_Prior_30_Days_Count
 into #Table1_Admin_Data_Admission_Prior_30_Days_Count
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_IP_Visits_2 as IP2
 	on CB2.VISIT_OCCURRENCE_ID = IP2.INDEX_VISIT_ID
@@ -150,7 +162,14 @@ from AMI.Cohort_Base_2 as CB2
 ---------------------------------------------------------------------------
 --Number of ED visits 30 days before the admission and total time in ED
 --------------------------------------------------------------------------
-drop table if exists #Related_ED_Visits_30;
+--drop table if exists #Related_ED_Visits_30;
+
+
+IF OBJECT_ID('#Related_ED_Visits_30', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  #Related_ED_Visits_30
+END
+GO
 
 --Get related visits
 select
@@ -158,12 +177,15 @@ select
 	, OVO.VISIT_OCCURRENCE_ID
 	, OVO.VISIT_START_DATE
 	, OVO.VISIT_END_DATE
-	, datediff(hh, OVO.VISIT_START_DATETIME, OVO.VISIT_END_DATETIME) as Time_In_ED
-	, datediff(mi, OVO.VISIT_START_DATETIME, OVO.VISIT_END_DATETIME) as Time_In_ED_Minutes
+	--, datediff(hh, OVO.VISIT_START_DATETIME, OVO.VISIT_END_DATETIME) as Time_In_ED
+	--, datediff(mi, OVO.VISIT_START_DATETIME, OVO.VISIT_END_DATETIME) as Time_In_ED_Minutes
+
+	 ,datediff(hh, OVO.VISIT_START_TIME, OVO.VISIT_END_TIME) as Time_In_ED
+	, datediff(mi, OVO.VISIT_START_TIME, OVO.VISIT_END_TIME) as Time_In_ED_Minutes
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_ED_Visits_30
-from OMOP.VISIT_OCCURRENCE as OVO
-join AMI.COHORT_BASE_2 as CB2
+from VISIT_OCCURRENCE as OVO
+join COHORT_BASE_2 as CB2
 on OVO.PERSON_ID = CB2.PERSON_ID
 where
 	OVO.VISIT_CONCEPT_ID = 9203 --ED visit
@@ -172,8 +194,14 @@ where
 ;
 
 --Count the ED visits up to 30 days prior
-drop table if exists #Related_ED_Visits_30_2;
+--drop table if exists #Related_ED_Visits_30_2;
 
+
+IF OBJECT_ID('#Related_ED_Visits_30_2', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  #Related_ED_Visits_30_2
+END
+GO
 select 
 	  ED.PERSON_ID
 	, ED.INDEX_VISIT_ID
@@ -188,7 +216,15 @@ group by
 ;
 
 --Join with Cohort_Base_2
-drop table if exists #Table1_Admin_Data_ED_Visit_Prior_30_Days;
+------ here at noon
+--drop table if exists #Table1_Admin_Data_ED_Visit_Prior_30_Days;
+
+IF OBJECT_ID('#Table1_Admin_Data_ED_Visit_Prior_30_Days', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  #Table1_Admin_Data_ED_Visit_Prior_30_Days
+  END
+GO
+
 
 select
 	 CB2.PERSON_ID
@@ -206,7 +242,7 @@ select
 		else ED2.Total_Minutes_In_ED
 	 end as ED_Visit_Prior_30_Days_Minutes_In_ED
 into #Table1_Admin_Data_ED_Visit_Prior_30_Days
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_ED_Visits_30_2 as ED2
 	on CB2.VISIT_OCCURRENCE_ID = ED2.INDEX_VISIT_ID
@@ -226,8 +262,8 @@ select
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 	, CB2.ADMIT_DATE as Index_Admit_Date
 into #Related_Visits_IP
-from OMOP.VISIT_OCCURRENCE as OVO
-join AMI.COHORT_BASE_2 as CB2
+from VISIT_OCCURRENCE as OVO
+join COHORT_BASE_2 as CB2
 on OVO.PERSON_ID = CB2.PERSON_ID
 where
 	OVO.VISIT_CONCEPT_ID = 9201 --Inpatient
@@ -245,8 +281,8 @@ select
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 	, CB2.ADMIT_DATE as Index_Admit_Date
 into #Related_Visits_ED
-from OMOP.VISIT_OCCURRENCE as OVO
-join AMI.COHORT_BASE_2 as CB2
+from VISIT_OCCURRENCE as OVO
+join COHORT_BASE_2 as CB2
 on OVO.PERSON_ID = CB2.PERSON_ID
 where
 	OVO.VISIT_CONCEPT_ID = 9203 --ED
@@ -254,7 +290,15 @@ where
 	and OVO.VISIT_OCCURRENCE_ID != CB2.VISIT_OCCURRENCE_ID
 ;
 
-drop table if exists #Related_Visits_ED_to_IP;
+--drop table if exists #Related_Visits_ED_to_IP;
+
+IF OBJECT_ID('#Related_Visits_ED_to_IP', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  #Related_Visits_ED_to_IP
+  END
+GO
+
+
 
 select
 	  ED.PERSON_ID
@@ -293,7 +337,7 @@ select
 		else ED2.Qty
 	 end as ED_to_IP_Visit_Prior_30_Days_Count
 into #Table1_Admin_Data_ED_to_IP_Visit_Prior_30_Days
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_Visits_ED_to_IP_Sum as ED2
 	on CB2.VISIT_OCCURRENCE_ID = ED2.INDEX_VISIT_ID
@@ -304,7 +348,15 @@ from AMI.Cohort_Base_2 as CB2
 --Combine variables from temp tables
 --------------------------------------------------------------------------
 
-drop table if exists Table1_Admin_Data;
+--drop table if exists Table1_Admin_Data;
+
+IF OBJECT_ID('Table1_Admin_Data', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE  Table1_Admin_Data
+  END
+GO
+
+
 
 select 
 	  L.PERSON_ID
@@ -319,7 +371,7 @@ select
 	, ED30.ED_Visit_Prior_30_Days_Time_In_ED
 	, ED30.ED_Visit_Prior_30_Days_Minutes_In_ED
 	, EDIP.ED_to_IP_Visit_Prior_30_Days_Count
-into AMI.Table1_Admin_Data
+into Table1_Admin_Data
 from 
 	#Table1_Admin_Data_Index_LOS as L
 	left join
@@ -342,8 +394,8 @@ from
 
 
 
-
 /*
+
 select * from Table1_Admin_Data limit 100;
 
 select * from Table1_Admin_Data where ED_to_IP_Visit_Prior_30_Days > 0 limit 100;
@@ -359,4 +411,5 @@ select ED_Visit_Prior_30_Days_Count, count(*) from Table1_Admin_Data group by ED
 select ED_Visit_Prior_30_Days_Time_In_ED, count(*) from Table1_Admin_Data group by ED_Visit_Prior_30_Days_Time_In_ED;
 
 select ED_to_IP_Visit_Prior_30_Days, count(*) from Table1_Admin_Data group by ED_to_IP_Visit_Prior_30_Days;
+
 */
