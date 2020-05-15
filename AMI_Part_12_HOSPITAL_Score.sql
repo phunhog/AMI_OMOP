@@ -23,6 +23,8 @@ Length of stay >= 5 days
 --Length of stay >= 5 days
 --------------------------------------------------------------------------
 
+--Update 5/15/2020 edit obj names to match DARTMOUTH OMOP_CDM
+
 select 
 	CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -36,9 +38,9 @@ select
 		then 1
 		else 0
 	end as LOS5_Flag
-into #Table1_HOSPITAL_Score_LOS
+into  #Table1_HOSPITAL_Score_LOS
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 ;
 
 
@@ -60,9 +62,9 @@ select
 	end as Procedure_Flag
 into #Table1_HOSPITAL_Score_Any_Procedure
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-		OMOP.PROCEDURE_OCCURRENCE as PO
+		PROCEDURE_OCCURRENCE as PO
 		on CB2.PERSON_ID = PO.PERSON_ID
 where PO.Procedure_Date between CB2.Admit_date and CB2.DISCHARGE_DATE
 group by
@@ -85,8 +87,8 @@ select
 	, VO.VISIT_END_DATE
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_IP_Visits
-from OMOP.VISIT_OCCURRENCE as VO
-join AMI.COHORT_BASE_2 as CB2
+from VISIT_OCCURRENCE as VO
+join COHORT_BASE_2 as CB2
 on VO.PERSON_ID = CB2.PERSON_ID
 where
 	VO.VISIT_CONCEPT_ID = 9201 --IP visit
@@ -116,7 +118,7 @@ select
 		else IP2.Qty
 	 end as Prior_Year_Admissions_Count
 into #Table1_HOSPITAL_Score_Prior_Year_Admissions_Count
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_IP_Visits_2 as IP2
 	on CB2.VISIT_OCCURRENCE_ID = IP2.INDEX_VISIT_ID
@@ -133,11 +135,11 @@ select
 	, VO.VISIT_OCCURRENCE_ID
 	, VO.VISIT_START_DATE
 	, VO.VISIT_END_DATE
-	, Datediff(minute,  VO.VISIT_START_DATETIME, VO.VISIT_END_DATETIME) as Time_In_ED
+	, Datediff(minute,  VO.VISIT_START_TIME, VO.VISIT_END_TIME) as Time_In_ED
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_ED_Visits_1
-from OMOP.VISIT_OCCURRENCE as VO
-join AMI.COHORT_BASE_2 as CB2
+from VISIT_OCCURRENCE as VO
+join COHORT_BASE_2 as CB2
 on VO.PERSON_ID = CB2.PERSON_ID
 where
 	VO.VISIT_CONCEPT_ID = 9203 --ED visit
@@ -166,7 +168,7 @@ select
 		else 1
 	 end as Nonelective_Admission_Flag
 into #Table1_HOSPITAL_Score_Nonelective_Admission_Flag
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_ED_Visits_1_2 as ED2
 	on CB2.VISIT_OCCURRENCE_ID = ED2.INDEX_VISIT_ID
@@ -182,13 +184,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when Ref.CONDITIONID IN (10, 419) then 1 else 0 end) as Oncology_Flag
 into #Table1_HOSPITAL_Score_Oncology_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as CO
+	CONDITION_OCCURRENCE as CO
 		ON CB2.PERSON_ID = CO.PERSON_ID
 		AND CO.CONDITION_START_DATE between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		ON Ref.TARGET_CONCEPT_ID = CO.CONDITION_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -203,21 +205,21 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, M.MEASUREMENT_DATETIME
+	, M.MEASUREMENT_TIME
 	, M.VALUE_AS_NUMBER
 	, M.MEASUREMENT_SOURCE_VALUE
 	, M.UNIT_SOURCE_VALUE
-	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_TIME) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_TIME DESC) AS Last_VALUE_AS_NUMBER
 into #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as M
+	Measurement as M
 		on CB2.PERSON_ID = M.PERSON_ID
-		and M.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+		and M.MEASUREMENT_TIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where M.Measurement_Concept_ID = 3019550
-	and M.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+	and M.MEASUREMENT_TIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	and M.UNIT_SOURCE_VALUE = 'mEq/L'
 	and M.MEASUREMENT_SOURCE_VALUE = 'Na'
 	and M.VALUE_AS_NUMBER IS NOT NULL
@@ -267,7 +269,7 @@ select distinct
 	  end as Sodium_Level_Last_135_Flag
 into #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_1 AS S
 		on CB2.VISIT_OCCURRENCE_ID = S.VISIT_OCCURRENCE_ID
@@ -284,20 +286,20 @@ from
 select distinct
 	  CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
-	, M.MEASUREMENT_DATETIME
+	, M.MEASUREMENT_TIME
 	, M.VALUE_AS_NUMBER
 	, M.MEASUREMENT_SOURCE_VALUE
 	, M.UNIT_SOURCE_VALUE
-	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_DATETIME) AS First_VALUE_AS_NUMBER
-	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
+	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_TIME) AS First_VALUE_AS_NUMBER
+	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_TIME DESC) AS Last_VALUE_AS_NUMBER
 into #Table1_HOSPITAL_Score_Hemoglobin_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as M
+	Measurement as M
 		on CB2.PERSON_ID = M.PERSON_ID
 where M.Measurement_Concept_ID = 3000963
-	and M.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
+	and M.MEASUREMENT_TIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	and M.UNIT_SOURCE_VALUE = 'g/dL'
 	and M.MEASUREMENT_SOURCE_VALUE = 'Hgb'
 	and M.VALUE_AS_NUMBER IS NOT NULL
@@ -346,7 +348,7 @@ select
 	  end as Hemoglobin_Level_Last_12_Flag
 into #Table1_HOSPITAL_Score_Hemoglobin_Level_Last_12_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_HOSPITAL_Score_Hemoglobin_Level_1 AS H
 		on CB2.VISIT_OCCURRENCE_ID = H.VISIT_OCCURRENCE_ID
@@ -426,6 +428,12 @@ from
 ------------------------------------------------------------------
 --Overall HOSPITAL Score
 -------------------------------------------------------------------
+
+IF OBJECT_ID('Table1_HOSPITAL_Score', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_HOSPITAL_Score
+END
+GO
 
 select 
 	  PERSON_ID
