@@ -8,10 +8,8 @@
 Part 1.1: Add discharges one year prior and one year after the index admission
 	for the set of patients that are part of the set of index admissions from Part 1.
 */
-
--- editied with help of chad 1/6/2020
---returns 356 records of 2017 cases
 -----------------------------------------------------------------------------------------
+
 
 --USE AMI
 use OMOP_CDM
@@ -29,26 +27,22 @@ select
 	,ACB.GENDER
 	,ACB.RACE
 	,ACB.ETHNICITY
-	,ASSN.SSN
-	,ACB.ZIPCODE
-	,ACB.FIRST_NAME
-	,ACB.LAST_NAME
-	,ACB.MIDDLE_NAME
+	--,ASSN.SSN
+	--,ACB.ZIPCODE
+	--,ACB.FIRST_NAME
+	--,ACB.LAST_NAME
+	--,ACB.MIDDLE_NAME
 	,ACB.DOB
 	,ACB.Age_at_Admit
-	
 	,min(OCO.CONDITION_SOURCE_VALUE) as PRIM_DIAG  --Account for the possibility of both ICD9 and ICD10 primary diagnosis records during transition to ICD10
-	
 	,OVO.VISIT_START_DATE as ADMIT_DATE
 	,OVO.VISIT_START_TIME AS ADMIT_DATETIME
 	,OVO.VISIT_END_DATE as DISCHARGE_DATE
-	,OVO.VISIT_END_TIME as DISCHARGE_DATETIME
+	,OVO.visit_end_time as DISCHARGE_DATETIME
 	,ACB.ADMIT_DATE AS Index_Admit_Date
 	,ACB.DISCHARGE_DATE AS Index_Discharge_Date
 	,ACB.VISIT_OCCURRENCE_ID AS Index_VISIT_OCCURRENCE_ID
 	,OVO.VISIT_OCCURRENCE_ID as VISIT_OCCURRENCE_ID
-
-	
 into
 	--temp AMI_COHORT_BASE_2a	--Netezza SQL
 	#AMI_COHORT_BASE_2a
@@ -60,38 +54,38 @@ from
 	left join 
 	CONDITION_OCCURRENCE as OCO
 		on OVO.VISIT_OCCURRENCE_ID = OCO.VISIT_OCCURRENCE_ID
-	left join
-	Ref_Person_SSN as ASSN
-		on ACB.MRN = ASSN.MRN
+	--left join
+	--AMI.Ref_Person_SSN as ASSN
+	--	on ACB.MRN = ASSN.MRN
 where 
 	OVO.VISIT_CONCEPT_ID = 9201 --Inpatient
 	and OCO.CONDITION_TYPE_CONCEPT_ID = '38000200' --Inpatient Header first position
-
+	--and OCO.CONDITION_STATUS_CONCEPT_ID = '4230359' --Final Diagnosis (VUMC)
 	and (DateDiff(dd,OVO.VISIT_END_DATE, ACB.ADMIT_DATE) between 1 and 365
 		or DateDiff(dd,ACB.DISCHARGE_DATE, OVO.VISIT_START_DATE) between 1 and 365)
-
---  had to convert data types to get this date constraint to work
-	and Convert(varchar(25),ACB.DISCHARGE_DATE,112) <> Convert(varchar(25),OVO.VISIT_END_DATE,112) --to account for a new one day visit on same day as discharge date of index admission
-
---	got rid of this per chad's review over the phone.
---  and ACB.DISCHARGE_DATE < '1/1/2017'
+--	and --Netezza SQL
+--		(
+--		(ACB.ADMIT_DATE - OVO.VISIT_END_DATE) between 0 and 365
+--		or (OVO.VISIT_START_DATE - ACB.DISCHARGE_DATE) between 0 and 365
+--		)
+	and ACB.DISCHARGE_DATE <> OVO.VISIT_END_DATE --to account for a new one day visit on same day as discharge date of index admission
 group by
 	 ACB.MRN
 	,ACB.PERSON_ID
 	,ACB.GENDER
 	,ACB.RACE
 	,ACB.ETHNICITY
-	,ASSN.SSN
-	,ACB.ZIPCODE
-	,ACB.FIRST_NAME
-	,ACB.LAST_NAME
-	,ACB.MIDDLE_NAME
+	--,ASSN.SSN
+	--,ACB.ZIPCODE
+	--,ACB.FIRST_NAME
+	--,ACB.LAST_NAME
+	--,ACB.MIDDLE_NAME
 	,ACB.DOB
 	,ACB.Age_at_Admit
 	,OVO.VISIT_START_DATE
-	,OVO.VISIT_START_TIME 
+	,OVO.VISIT_START_TIME
 	,OVO.VISIT_END_DATE
-	,OVO.VISIT_END_TIME
+	,OVO.visit_end_time
 	,ACB.ADMIT_DATE
 	,ACB.DISCHARGE_DATE
 	,ACB.VISIT_OCCURRENCE_ID
@@ -100,12 +94,16 @@ group by
 
 
 
+--DROP TABLE IF EXISTS AMI.COHORT_BASE_2
+--GO
+
 
 IF OBJECT_ID('COHORT_BASE_2', 'U') IS NOT NULL 
 	DROP table COHORT_BASE_2
 
 
 GO
+
 
 select
 	*
@@ -114,7 +112,7 @@ into
 	COHORT_BASE_2
 from
 	--AMI.COHORT_BASE_2a	--Netezza SQL
-     #AMI_COHORT_BASE_2a
+	#AMI_COHORT_BASE_2a
 
 UNION
 
@@ -125,13 +123,11 @@ UNION
 	      ,ACB.GENDER
 	      ,ACB.RACE
 	      ,ACB.ETHNICITY
-		  --error here
-		  --ASSN.MRN
-	      ,ASSN.SSN
-		  ,ACB.ZIPCODE
-	      ,ACB.FIRST_NAME
-	      ,ACB.LAST_NAME
-	      ,ACB.MIDDLE_NAME
+	   --   ,ASSN.MRN
+		  --,ACB.ZIPCODE
+	   --   ,ACB.FIRST_NAME
+	   --   ,ACB.LAST_NAME
+	   --   ,ACB.MIDDLE_NAME
 	      ,ACB.DOB
 		  ,ACB.Age_at_Admit
 	      ,ACB.PRIM_DIAG
@@ -146,11 +142,11 @@ UNION
 		  ,1 as Index_Admission_Flag
 	FROM 
 		COHORT_BASE as ACB
-		left join
-		Ref_Person_SSN as ASSN
-			ON ACB.MRN = ASSN.MRN
+		--left join
+		--AMI.Ref_Person_SSN as ASSN
+		--	ON ACB.MRN = ASSN.MRN
 	--where 
-		--discharge_date < '1/1/2017'
+	--	discharge_date < '1/1/2017'
 )
 ;
 --End------------------------------------------------------------------------------
