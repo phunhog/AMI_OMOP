@@ -280,6 +280,12 @@ left join #Table1_ENRICHD_Score_Vars as V
 
 --drop table Table1_ENRICHD_Score if exists;
 
+IF OBJECT_ID('Table1_ENRICHD_Score', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_ENRICHD_Score
+END
+GO
+
 Select
 	 PERSON_ID
 	,VISIT_OCCURRENCE_ID
