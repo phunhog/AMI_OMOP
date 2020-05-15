@@ -25,6 +25,8 @@ Total Score
 */
 -----------------------------------------------------------------------------------------
 
+-- update 5/15/2020 edit obj names to match Dartmouth
+
 --Existing variables
 select 
 	 CB2.PERSON_ID
@@ -34,12 +36,12 @@ select
 	,L.Creatinine_Level_Avg
 	,C.Comorbid_Diabetes_Flag
 into #Table1_ENRICHD_Score_Vars
-from AMI.COHORT_BASE_2 as CB2
-left join AMI.Table1_Patient_History as PH
+from COHORT_BASE_2 as CB2
+left join Table1_Patient_History as PH
 	on CB2.VISIT_OCCURRENCE_ID = PH.VISIT_OCCURRENCE_ID
-left join AMI.Table1_Laboratories as L
+left join Table1_Laboratories as L
 	on CB2.VISIT_OCCURRENCE_ID = L.VISIT_OCCURRENCE_ID
-left join AMI.Table1_Comorbidities as C
+left join Table1_Comorbidities as C
 	on CB2.VISIT_OCCURRENCE_ID = C.VISIT_OCCURRENCE_ID
 ;
 
@@ -51,13 +53,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when Ref.conditionid IN (80) then 1 else 0 end) as History_Stroke_Flag
 into #Table1_ENRICHD_Score_History_Stroke_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.Condition_Occurrence as CO
+	Condition_Occurrence as CO
 		ON CB2.PERSON_ID = CO.PERSON_ID
 		AND CO.Condition_Start_Date < CB2.ADMIT_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -74,13 +76,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when Ref.conditionid IN (79) then 1 else 0 end) as CHF_Flag
 into #Table1_ENRICHD_Score_CHF_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.Condition_Occurrence as CO
+	Condition_Occurrence as CO
 		ON CB2.PERSON_ID = CO.PERSON_ID
 		AND CO.Condition_Start_Date between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -97,13 +99,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when Ref.conditionid IN (13, 280) then 1 else 0 end) as MI_Flag
 into #Table1_ENRICHD_Score_MI_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.Condition_Occurrence as CO
+	Condition_Occurrence as CO
 		ON CB2.PERSON_ID = CO.PERSON_ID
 		AND CO.Condition_Start_Date between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -122,11 +124,11 @@ select MI.PERSON_ID
 into #Table1_ENRICHD_Score_Post_MI_CABG_Flag
 from #Table1_ENRICHD_Score_MI_Flag as MI
 	left join
-	OMOP.Condition_Occurrence as CO
+	Condition_Occurrence as CO
 		ON MI.PERSON_ID = CO.PERSON_ID
 		AND CO.Condition_Start_Date >= MI.ADMIT_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 where MI_Flag = 1
 group by MI.PERSON_ID, MI.VISIT_OCCURRENCE_ID, MI.ADMIT_DATE, MI.PRIM_DIAG
@@ -145,9 +147,9 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when CO.Condition_Concept_ID = 439846 then 1 else 0 end) as LVEF_Flag
 into #Table1_ENRICHD_Score_LVEF_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-		OMOP.CONDITION_OCCURRENCE as CO
+		CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 			and CB2.VISIT_OCCURRENCE_ID = CO.VISIT_OCCURRENCE_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG;
@@ -169,13 +171,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when ref.conditionid IN (79, 678) then 1 else 0 end) as History_CHF_Flag
 into #Table1_ENRICHD_Killip_CHF
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as CO
+	CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 		and CO.CONDITION_START_DATE < CB2.ADMIT_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -189,13 +191,13 @@ select CB2.PERSON_ID
 	, MAX(case when ref.conditionid = 1011	then 1 else 0 end) as JVD_Flag
 	, MAX(case when ref.conditionid = 1015	then 1 else 0 end) as Pulmonary_Edema_Flag
 into #Table1_ENRICHD_Killip_Vars
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as CO
+	CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 		and CO.CONDITION_START_DATE between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 group by 
 	CB2.PERSON_ID
@@ -210,13 +212,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when ref.conditionid = 202 then 1 else 0 end) as Cardiogenic_Shock_Flag
 into #Table1_ENRICHD_Killip_Shock
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as CO
+	CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 		and CO.CONDITION_START_DATE between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on CO.Condition_Concept_ID = Ref.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -235,7 +237,7 @@ select
 		else 'I'
 	  end as Killip_Class
 into #Table1_ENRICHD_Killip_Class
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 left join #Table1_ENRICHD_Killip_CHF as CHF
 	on CB2.VISIT_OCCURRENCE_ID = CHF.VISIT_OCCURRENCE_ID
 left join #Table1_ENRICHD_Killip_Vars as Vars
@@ -301,7 +303,7 @@ Select
 	Comorbid_Diabetes_Flag
 	*/
 	,0 as ENRICHD_Score	--all elements not available
-into AMI.Table1_ENRICHD_Score
+into Table1_ENRICHD_Score
 from #Table1_ENRICHD_Score1
 ;
 

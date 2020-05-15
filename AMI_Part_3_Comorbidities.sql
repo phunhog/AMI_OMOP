@@ -51,7 +51,7 @@ select
 --	,case when date_part('year',age(cb2.admit_date,cb2.dob)) >= 80 then 1 else 0 end as Age_80_Flag
 	,case when CB2.Age_at_Admit >= 80 then 1 else 0 end as Age_80_Flag
 into #Table1_Comorbidities_Age_80_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 ;
 --select top 1000 * from #Table1_Comorbidities_Age_80_Flag;
 
@@ -72,13 +72,13 @@ select
 into 
 	#Table1_Comorbidities1
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	[OMOP].[CONDITION_OCCURRENCE] as OCO	
+	[CONDITION_OCCURRENCE] as OCO	
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		AND datediff(dd, OCO.CONDITION_START_DATE, CB2.ADMIT_DATE) between 1 and 365
 	left join
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on OCO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by 
 	CB2.PERSON_ID
@@ -113,13 +113,13 @@ select CB2.PERSON_ID
 	, MAX(case when Ref.conditionid IN (296, 417)				then 1 else 0 end) as Comorbid_AIDS_Flag 
 into #Table1_Comorbidities_CD
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	[OMOP].[CONDITION_OCCURRENCE] as OCO	
+	[CONDITION_OCCURRENCE] as OCO	
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		AND datediff(dd, OCO.CONDITION_START_DATE, CB2.ADMIT_DATE) between 1 and 365
 	left join
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on OCO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by 
 	CB2.PERSON_ID
@@ -140,13 +140,13 @@ select CB2.PERSON_ID
 	, MAX(case when Ref.conditionid IN (1004) then 1 else 0 end) as Comorbid_CAD_Flag  --condition 1004
 into #Table1_Comorbidities2
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	[OMOP].[CONDITION_OCCURRENCE] as OCO	
+	[CONDITION_OCCURRENCE] as OCO	
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		AND datediff(dd, OCO.CONDITION_START_DATE, CB2.ADMIT_DATE) between 1 and 365
 	left join
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on OCO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by 
 	CB2.PERSON_ID
@@ -165,13 +165,13 @@ select CB2.PERSON_ID
 	, MAX(case when Ref.conditionid IN (1018) then 1 else 0 end)  as Prior_Revascularization_Flag
 into #Table1_Comorbidities_Prior_Revascularization_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	[OMOP].[Procedure_OCCURRENCE] as OPO	
+	[Procedure_OCCURRENCE] as OPO	
 		ON CB2.PERSON_ID = OPO.PERSON_ID
 		AND datediff(dd, OPO.Procedure_DATE, CB2.ADMIT_DATE) between 1 and 365
 	left join
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on OPO.Procedure_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by 
 	CB2.PERSON_ID
@@ -297,7 +297,7 @@ group by
 		else 0  
 	  end as Comorbid_AIDS_Flag   
 into #Table1_Comorbidities_Part_1
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join #Table1_Comorbidities_Age_80_Flag as A
 	on CB2.PERSON_ID = A.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = A.VISIT_OCCURRENCE_ID
@@ -412,7 +412,16 @@ from
 
 
 --Final table-------------------------------------------------------------------------
-drop table if exists Table1_Comorbidities
+--drop table if exists Table1_Comorbidities
+
+
+--drop table if exists Table1_Prior_Month_Diagnosis;
+
+IF OBJECT_ID('Table1_Comorbidities', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_Comorbidities
+END
+GO
 ;
 
 select
