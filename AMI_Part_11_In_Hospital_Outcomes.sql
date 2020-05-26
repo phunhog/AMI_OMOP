@@ -136,7 +136,7 @@ select
 	,sum(In_Hospital_Ischemia_Flag) as Isch
 	,sum(Echocardiography_Flag) as Echo
 	,sum(Cardiac_Procedure_Flag) as Cardiac
-from AMI.Table1_In_Hospital_Outcomes
+from Table1_In_Hospital_Outcomes
 ;
 
 select In_Hospital_HF_Flag, count(*) from Table1_In_Hospital_Outcomes
