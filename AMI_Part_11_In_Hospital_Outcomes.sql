@@ -14,7 +14,8 @@ Echocardiography
 
 --Update 5/14/2020 chqnge obj nmes tomatch Dartmouth OMOP_CDM
 -----------------------------------------------------------------------------------------
-
+use OMOP_CDM
+go
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -94,7 +95,15 @@ group by
  
  --combine temp tables
  --drop table Table1_In_Hospital_Outcomes if exists;
+
  
+IF OBJECT_ID('Table1_In_Hospital_Outcomes', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_In_Hospital_Outcomes
+END
+ 
+ go
+
  select 
  	  HS.PERSON_ID
 	, HS.VISIT_OCCURRENCE_ID
