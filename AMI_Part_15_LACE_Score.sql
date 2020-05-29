@@ -18,6 +18,12 @@ Comorbidities (Charlson score in Comorbidities)
 ED visits last 6 months (Administrative Data)
 */
 
+-- update 5/39 2020 change pbj names to match dartmouth OMOP
+
+use OMOP_CDM
+
+go
+
 Select 
 	 HS.PERSON_ID
 	,HS.VISIT_OCCURRENCE_ID
@@ -35,7 +41,7 @@ Select
 		when HS.LOS >= 14 then 7
 	 end as LACE_LOS_Score
 into #LACE_Part1
-from AMI.Table1_HOSPITAL_Score as HS
+from Table1_HOSPITAL_Score as HS
 ;
 
 
@@ -50,11 +56,11 @@ select
 		when C.Charlson_Deyo_Score >= 4 then 5
 	 end as LACE_Charlson_Score
 into #LACE_Part2
-from AMI.Table1_Comorbidities as C
+from Table1_Comorbidities as C
 ;
 
 
-select
+select distinct
 	 A.PERSON_ID
 	,A.VISIT_OCCURRENCE_ID
 	,case
@@ -65,12 +71,19 @@ select
 		when A.ED_Visit_Prior_180_Days_Count >= 4 then 4
 	 end as LACE_ED_Score
 into #LACE_Part3
-from AMI.Table1_Admin_Data as A
+from Table1_Admin_Data as A
 ;
 
 --drop table Table1_LACE_Score if exists;
 
-Select 
+
+IF OBJECT_ID('Table1_LACE_Score', 'U') IS NOT NULL 
+BEGIN
+  DROP TABLE Table1_LACE_Score
+END
+GO
+
+Select distinct 
 	 L1.PERSON_ID
 	,L1.VISIT_OCCURRENCE_ID
 	,L1.LACE_Acuity_Score
@@ -82,7 +95,7 @@ Select
 	  + L2.LACE_Charlson_Score
 	  + L3.LACE_ED_Score
 	  ) as LACE_Score
-into AMI.Table1_LACE_Score
+into Table1_LACE_Score
 from #LACE_Part1 as L1
 left join
 	#LACE_Part2 as L2
