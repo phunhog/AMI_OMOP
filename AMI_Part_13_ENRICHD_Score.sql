@@ -43,6 +43,7 @@ left join Table1_Laboratories as L
 	on CB2.VISIT_OCCURRENCE_ID = L.VISIT_OCCURRENCE_ID
 left join Table1_Comorbidities as C
 	on CB2.VISIT_OCCURRENCE_ID = C.VISIT_OCCURRENCE_ID
+	and cb2.PERSON_ID = c.PERSON_ID
 ;
 
 
