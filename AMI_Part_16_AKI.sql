@@ -14,7 +14,7 @@ select
 into 
 	#AKI_Pat_Visit_Min
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 group by 
 	CB2.PERSON_ID
 ;
@@ -35,7 +35,7 @@ into
 	#AKI_Creatinine_Labs
 from
 	#AKI_Pat_Visit_Min as V
-	left join OMOP.MEASUREMENT as M
+	left join MEASUREMENT as M
 		on V.PERSON_ID = M.PERSON_ID
 where
 	M.MEASUREMENT_CONCEPT_ID IN (3051825, 3016723) --LOINC = '38483-4', '2160-0'
@@ -57,9 +57,9 @@ into
 from 
 	#AKI_Creatinine_Labs AS L
 	left join
-	OMOP.VISIT_OCCURRENCE as VO
+	VISIT_OCCURRENCE as VO
 		on L.Person_ID = VO.Person_ID
-		and L.MEASUREMENT_DATETIME between VO.VISIT_START_DATETIME and VO.VISIT_END_DATETIME
+		and L.MEASUREMENT_TIME between VO.VISIT_START_TIME and VO.VISIT_END_TIME
 ;
 
 
@@ -80,7 +80,7 @@ select
 into 
 	#AKI_Baseline_Creatinine_AVG
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.PERSON_ID = L.PERSON_ID
 where 
@@ -104,7 +104,7 @@ select
 into 
 	#AKI_Baseline_Creatinine_Last
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.PERSON_ID = L.PERSON_ID
 where  
@@ -119,7 +119,7 @@ where
 
 select
 	  *
-into AKI_Baseline_Creatinine_Last_2
+into #AKI_Baseline_Creatinine_Last_2
 from
 (
        select *, ROW_NUMBER() OVER(PARTITION BY VISIT_OCCURRENCE_ID ORDER BY MEASUREMENT_DATE DESC) as RowNum
@@ -138,9 +138,9 @@ select
 	 CB2.VISIT_OCCURRENCE_ID
 	,MIN(L.VALUE_AS_NUMBER) as Creatinine_MIN
 into 
-	AKI_Baseline_Creatinine_MIN
+	#AKI_Baseline_Creatinine_MIN
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.PERSON_ID = L.PERSON_ID
 where  
@@ -166,7 +166,7 @@ Select
 into
 	#AKI_Baseline_Creatinine_All
 From
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Baseline_Creatinine_AVG as B1
 		on CB2.VISIT_OCCURRENCE_ID = B1.VISIT_OCCURRENCE_ID
 	left join #AKI_Baseline_Creatinine_Last_2 as B2
@@ -206,12 +206,12 @@ select distinct
 	  CB2.*
 	 ,L.VALUE_AS_NUMBER as Anchor_Creatinine
 	 ,L.MEASUREMENT_DATE as Anchor_Result_Date
-	 ,L.MEASUREMENT_DATETIME
+	 ,L.MEASUREMENT_TIME
 	 ,B.BASELINE_CREATININE_FINAL
 into 
 	#AKI_Creatinine_Labs_Anchor
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.VISIT_OCCURRENCE_ID = L.VO_VISIT_OCCURRENCE_ID
 	left join #AKI_Baseline_Creatinine_Final as B
@@ -374,7 +374,7 @@ from
 			,CASE
 				WHEN AKI_Stage = 0 THEN 0 ELSE 1
 			 END AS AKI_Flag
-			,ROW_NUMBER() OVER(PARTITION BY VISIT_OCCURRENCE_ID, Anchor_Result_Date ORDER BY measurement_datetime desc) as RowNum_Date
+			,ROW_NUMBER() OVER(PARTITION BY VISIT_OCCURRENCE_ID, Anchor_Result_Date ORDER BY measurement_time desc) as RowNum_Date
        from #AKI_Detail_No_ESRD
 ) as OrderedSet
 where
@@ -388,19 +388,26 @@ order by
 --Get days between so that AKI duration can be obtained
 --drop table AKI_Detail_Days_Between if exists;
 
+
+--
+
+--print 'HERE'
 select
 	A.*
 	,B.AKI_Flag as AKI_Flag_Previous
-	,A.Anchor_Result_Date - B.Anchor_Result_Date AS Days_Between_Measures
+	--,A.Anchor_Result_Date - B.Anchor_Result_Date AS Days_Between_Measures
+	,datediff(DD, A.Anchor_Result_Date , B.Anchor_Result_Date)AS Days_Between_Measures
 	,CASE
 		WHEN B.AKI_Flag = 1 
-		THEN (A.Anchor_Result_Date - B.Anchor_Result_Date)
+		--THEN (A.Anchor_Result_Date - B.Anchor_Result_Date)
+		then datediff(DD, A.Anchor_Result_Date , B.Anchor_Result_Date)
 		ELSE 0
 	 END AS AKI_Duration_Sub
 	,first_value(A.Anchor_Result_Date) OVER(Partition By A.visit_occurrence_id Order By A.rownum_visit) as AKI_Result_Date_First
 	,first_value(A.Anchor_Result_Date) OVER(Partition By A.visit_occurrence_id Order By A.rownum_visit desc) as AKI_Result_Date_Last
 	,first_value(A.AKI_Stage) OVER(Partition By A.visit_occurrence_id Order By A.rownum_visit) as AKI_Stage_First
 	,first_value(A.AKI_Stage) OVER(Partition By A.visit_occurrence_id Order By A.rownum_visit desc) as AKI_Stage_Last
+--
 into
 	#AKI_Detail_Days_Between
 from
@@ -425,8 +432,11 @@ Select
 	,max(AKI_Stage) as AKI_Stage_Max
 	,AKI_Result_Date_First
 	,AKI_Result_Date_Last
-	,discharge_date - AKI_Result_Date_First as Duration_First_to_DD
-	,discharge_date - AKI_Result_Date_Last as Duration_Last_to_DD
+	--,discharge_date - AKI_Result_Date_First as Duration_First_to_DD
+	--,discharge_date - AKI_Result_Date_Last as Duration_Last_to_DD
+
+	,Datediff(dd,discharge_date,AKI_Result_Date_First) as Duration_First_to_DD
+	,Datediff(dd,discharge_date , AKI_Result_Date_Last) as Duration_Last_to_DD
 	,count(*) as AKI_Measures_Count
 	,sum(AKI_Duration_Sub) as AKI_Duration_Sum
 into
@@ -496,9 +506,9 @@ select
 	,AKI_Unresolved_Flag
 	,AKI_Recovered_Flag
 into
-	AMI.Table1_AKI_Stage
+	Table1_AKI_Stage
 from 
-	ami.cohort_base_2 as CB2
+	cohort_base_2 as CB2
 	left join #AKI_Duration as D
 		on CB2.visit_occurrence_ID = D.visit_occurrence_id
 ;
