@@ -106,7 +106,7 @@ select
 	,D.Deceased_Flag_Alt
 	,D.Transfer_at_Discharge_Flag
 	--,D.Rehab_Flag
-	,R.[Rehab_Flag]
+	,rh.[Rehab_Flag]
 	,PH.History_Chest_Pain_Flag
 	,PH.History_AMI_Flag 
 	,PH.History_CABG_Flag 
@@ -295,6 +295,11 @@ from
 		Table1_AKI_Stage as AKI
 		on CB2.PERSON_ID = AKI.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = AKI.VISIT_OCCURRENCE_ID 
+
+ left join Table1_Rehabilitation as rh
+ 		on CB2.PERSON_ID = rh.PERSON_ID
+		and CB2.VISIT_OCCURRENCE_ID = rh.VISIT_OCCURRENCE_ID 
+
 --	left join
 --		REF_PERSON_SSN as ssn
 --		on ssn.MRN = cb2.MRN
@@ -303,16 +308,16 @@ go
 ;
 
 
-/*
 
-WIP thursday 6/4
+
+--WIP thursday 6/4
 
 Create View vMasterFlatFile as
 Select M.*, ssn.SSN from MasterFlatFile as M
 left join REF_PERSON_SSN as ssn
 ON ssn.MRN = m.MRN
 
-*/
+
 ;
 
 
