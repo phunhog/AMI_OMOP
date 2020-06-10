@@ -212,6 +212,7 @@ select
 	,AKI.AKI_Duration
 	,AKI.AKI_Unresolved_Flag
 	,AKI.AKI_Recovered_Flag
+	,ssn.ssn
 into
 	MasterFlatFile
 from 
@@ -300,9 +301,11 @@ from
  		on CB2.PERSON_ID = rh.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = rh.VISIT_OCCURRENCE_ID 
 
---	left join
---		REF_PERSON_SSN as ssn
---		on ssn.MRN = cb2.MRN
+
+--Update 6/10/2020 here is where SSN comes in
+	left join
+		REF_PERSON_SSN as ssn
+	on ssn.MRN = cb2.MRN
 
 go
 ;
@@ -310,12 +313,15 @@ go
 
 
 
+
 --WIP thursday 6/4
 
 Create View vMasterFlatFile as
-Select M.*, ssn.SSN from MasterFlatFile as M
-left join REF_PERSON_SSN as ssn
-ON ssn.MRN = m.MRN
+Select M.*
+--, ssn.SSN 
+from MasterFlatFile as M
+--left join REF_PERSON_SSN as ssn
+--ON ssn.MRN = m.MRN
 
 
 ;
