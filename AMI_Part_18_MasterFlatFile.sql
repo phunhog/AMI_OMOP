@@ -23,7 +23,7 @@ END
 GO
 
 
-select 
+select distinct
 	 CB2.*
 	,P30.Prior_Sepsis_30D
     ,P30.Prior_Hyperkalemia_30D
@@ -315,11 +315,14 @@ go
 
 
 --WIP thursday 6/4
+--drop View dbo.vMasterFlatFile
+--go 
 
-Create View vMasterFlatFile as
-Select M.*
+--Create View vMasterFlatFile as
+
+--Select M.*
 --, ssn.SSN 
-from MasterFlatFile as M
+--from MasterFlatFile as M
 --left join REF_PERSON_SSN as ssn
 --ON ssn.MRN = m.MRN
 
