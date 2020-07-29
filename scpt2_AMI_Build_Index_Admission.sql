@@ -72,8 +72,9 @@ from
 	left join 
 	PERSON as OPer
 		on OVO.PERSON_ID = OPer.PERSON_ID
+------------------------------------------------------------
 	/*
-	with chad 7/24
+	Edited with chad 7/24 over phone
 	left outer join
 	REF_DIAG_CODES as RefDiag
 		on OCO.Condition_Concept_ID = RefDiag.Target_Concept_ID
@@ -81,7 +82,7 @@ from
 	join
 	[dbo].[ref_diag_codes] as RefDiag
 		on OCO.Condition_source_value = RefDiag.SOURCE_CONCEPT_CODE
-
+---------------------------------------------------------------------------
 	left join
 	[LOCATION] as OLoc
 		on OPer.LOCATION_ID = OLoc.LOCATION_ID
