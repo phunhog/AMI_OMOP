@@ -488,7 +488,8 @@ from
 		on CB2.PERSON_ID = OM.PERSON_ID
 		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
-	OM.Measurement_Concept_ID = 3005785
+	--8/31/2020--OM.Measurement_Concept_ID = 3005785
+        OM.Measurement_Concept_ID in ( 3005785, 3007220)
 	and OM.VALUE_AS_NUMBER IS NOT NULL
 	and OM.VALUE_AS_NUMBER <> ''
 	--and M.UNIT_SOURCE_VALUE = 'ng/mL'
@@ -598,7 +599,8 @@ from
 		on CB2.PERSON_ID = OM.PERSON_ID
 		and Convert(varchar(50),OM.MEASUREMENT_TIME) between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where 
-	OM.Measurement_Concept_ID IN (3011960)
+	--8/31/2020 OM.Measurement_Concept_ID IN (3011960)
+OM.Measurement_Concept_ID IN (3011960,3029187)
 	and OM.VALUE_AS_NUMBER IS NOT NULL
 	and OM.VALUE_AS_NUMBER <> ''
 	--and M.UNIT_SOURCE_VALUE = 'pg/mL'
