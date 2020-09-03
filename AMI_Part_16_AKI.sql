@@ -59,7 +59,7 @@ from
 	left join
 	VISIT_OCCURRENCE as VO
 		on L.Person_ID = VO.Person_ID
-		and L.MEASUREMENT_TIME between VO.VISIT_START_TIME and VO.VISIT_END_TIME
+		and L.MEASUREMENT_DATETIME between VO.VISIT_START_TIME and VO.VISIT_END_TIME
 ;
 
 
@@ -206,7 +206,7 @@ select distinct
 	  CB2.*
 	 ,L.VALUE_AS_NUMBER as Anchor_Creatinine
 	 ,L.MEASUREMENT_DATE as Anchor_Result_Date
-	 ,L.MEASUREMENT_TIME
+	 ,L.MEASUREMENT_DATETIME
 	 ,B.BASELINE_CREATININE_FINAL
 into 
 	#AKI_Creatinine_Labs_Anchor
@@ -374,7 +374,7 @@ from
 			,CASE
 				WHEN AKI_Stage = 0 THEN 0 ELSE 1
 			 END AS AKI_Flag
-			,ROW_NUMBER() OVER(PARTITION BY VISIT_OCCURRENCE_ID, Anchor_Result_Date ORDER BY measurement_time desc) as RowNum_Date
+			,ROW_NUMBER() OVER(PARTITION BY VISIT_OCCURRENCE_ID, Anchor_Result_Date ORDER BY MEASUREMENT_DATETIME desc) as RowNum_Date
        from #AKI_Detail_No_ESRD
 ) as OrderedSet
 where
