@@ -17,13 +17,14 @@ Admission type non-elective
 Length of stay >= 5 days
 */
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+USE OMOP_CDM
 GO
 
 ---------------------------------------------------------------------------
 --Length of stay >= 5 days
 --------------------------------------------------------------------------
-drop table if exists #Table1_HOSPITAL_Score_LOS;
+--drop table if exists #Table1_HOSPITAL_Score_LOS;
 
 select 
 	CB2.PERSON_ID
@@ -40,14 +41,14 @@ select
 	end as LOS5_Flag
 into #Table1_HOSPITAL_Score_LOS
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 ;
 
 
 ----------------------------------------------------------------------------
 --Procedure during hospital stay flag
 ----------------------------------------------------------------------------
-drop table if exists #Table1_HOSPITAL_Score_Any_Procedure;
+--drop table if exists #Table1_HOSPITAL_Score_Any_Procedure;
 
 select
 	CB2.PERSON_ID
@@ -63,9 +64,9 @@ select
 	end as Procedure_Flag
 into #Table1_HOSPITAL_Score_Any_Procedure
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-		OMOP.PROCEDURE_OCCURRENCE as PO
+		PROCEDURE_OCCURRENCE as PO
 		on CB2.PERSON_ID = PO.PERSON_ID
 		and PO.Procedure_Date between CB2.Admit_date and CB2.DISCHARGE_DATE
 group by
@@ -80,7 +81,7 @@ group by
 ---------------------------------------------------------------------------
 --Number of hospital admissions during the previous year
 --------------------------------------------------------------------------
-drop table if exists #Related_IP_Visits;
+--drop table if exists #Related_IP_Visits;
 
 select
 	  VO.PERSON_ID
@@ -90,9 +91,9 @@ select
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_IP_Visits
 from 
-	OMOP.VISIT_OCCURRENCE as VO
+	VISIT_OCCURRENCE as VO
 	join 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 		on VO.PERSON_ID = CB2.PERSON_ID
 		and VO.VISIT_START_DATE Between dateadd(dd, -365, CB2.ADMIT_DATE) and CB2.ADMIT_DATE
 where
@@ -101,7 +102,7 @@ where
 ;
 
 --Count the IP visits up to 365 days prior
-drop table if exists #Related_IP_Visits_2;
+--drop table if exists #Related_IP_Visits_2;
 
 select 
 	  IP.PERSON_ID
@@ -115,7 +116,7 @@ group by
 ;
 
 --Join with Cohort_Base_2
-drop table if exists #Table1_HOSPITAL_Score_Prior_Year_Admissions_Count;
+--drop table if exists #Table1_HOSPITAL_Score_Prior_Year_Admissions_Count;
 
 select
 	CB2.Person_ID
@@ -126,7 +127,7 @@ select
 		else IP2.Qty
 	 end as Prior_Year_Admissions_Count
 into #Table1_HOSPITAL_Score_Prior_Year_Admissions_Count
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_IP_Visits_2 as IP2
 	on CB2.VISIT_OCCURRENCE_ID = IP2.INDEX_VISIT_ID
@@ -138,20 +139,20 @@ from AMI.Cohort_Base_2 as CB2
 --------------------------------------------------------------------------
 
 --Get related visits
-drop table if exists #Related_ED_Visits_1;
+--drop table if exists #Related_ED_Visits_1;
 
 select
 	  VO.PERSON_ID
 	, VO.VISIT_OCCURRENCE_ID
 	, VO.VISIT_START_DATE
 	, VO.VISIT_END_DATE
-	, Datediff(minute,  VO.VISIT_START_DATETIME, VO.VISIT_END_DATETIME) as Time_In_ED
+	, Datediff(minute,  VO.VISIT_START_TIME, VO.VISIT_END_TIME) as Time_In_ED
 	, CB2.VISIT_OCCURRENCE_ID as Index_Visit_ID
 into #Related_ED_Visits_1
 from 
-	OMOP.VISIT_OCCURRENCE as VO
+	VISIT_OCCURRENCE as VO
 	join 
-		AMI.COHORT_BASE_2 as CB2
+		COHORT_BASE_2 as CB2
 		on VO.PERSON_ID = CB2.PERSON_ID
 		and VO.VISIT_START_DATE Between Dateadd(dd, -1, CB2.ADMIT_DATE) and CB2.ADMIT_DATE
 where
@@ -160,7 +161,7 @@ where
 ;
 
 --Count the ED visits up to 1 day prior
-drop table if exists #Related_ED_Visits_1_2;
+--drop table if exists #Related_ED_Visits_1_2;
 
 select 
 	  ED.PERSON_ID
@@ -174,7 +175,7 @@ group by
 ;
 
 --Join with Cohort_Base_2
-drop table if exists #Table1_HOSPITAL_Score_Nonelective_Admission_Flag;
+--drop table if exists #Table1_HOSPITAL_Score_Nonelective_Admission_Flag;
 
 select
 	 CB2.PERSON_ID
@@ -184,7 +185,7 @@ select
 		else 1
 	 end as Nonelective_Admission_Flag
 into #Table1_HOSPITAL_Score_Nonelective_Admission_Flag
-from AMI.Cohort_Base_2 as CB2
+from Cohort_Base_2 as CB2
 	left join 
 	#Related_ED_Visits_1_2 as ED2
 	on CB2.VISIT_OCCURRENCE_ID = ED2.INDEX_VISIT_ID
@@ -193,7 +194,7 @@ from AMI.Cohort_Base_2 as CB2
 --------------------------------------------------------------------------
 --Discharge from an oncology service
 --------------------------------------------------------------------------
-drop table if exists #Table1_HOSPITAL_Score_Oncology_Flag;
+--drop table if exists #Table1_HOSPITAL_Score_Oncology_Flag;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -201,13 +202,13 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when Ref.CONDITIONID IN (10, 419) then 1 else 0 end) as Oncology_Flag
 into #Table1_HOSPITAL_Score_Oncology_Flag
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as CO
+	CONDITION_OCCURRENCE as CO
 		ON CB2.PERSON_ID = CO.PERSON_ID
 		AND CO.CONDITION_START_DATE between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		ON Ref.TARGET_CONCEPT_ID = CO.CONDITION_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -218,7 +219,7 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 --------------------------------------------------------------------------------
 
 --3019550 =	Sodium serum/plasma
-drop table if exists #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_0;
+--drop table if exists #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_0;
 
 select distinct
 	  CB2.PERSON_ID
@@ -231,9 +232,9 @@ select distinct
 	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
 into #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as M
+	Measurement as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where M.Measurement_Concept_ID = 3019550
@@ -244,7 +245,7 @@ where M.Measurement_Concept_ID = 3019550
 ;
 
 
-drop table if exists #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_1;
+--drop table if exists #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_1;
 
 select distinct
 	  PERSON_ID
@@ -269,7 +270,7 @@ group by
 ;
 
 
-drop table if exists #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag;
+--drop table if exists #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag;
 
 select distinct
 	  CB2.PERSON_ID
@@ -290,7 +291,7 @@ select distinct
 	  end as Sodium_Level_Last_135_Flag
 into #Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_HOSPITAL_Score_Sodium_Level_Last_135_Flag_1 AS S
 		on CB2.VISIT_OCCURRENCE_ID = S.VISIT_OCCURRENCE_ID
@@ -303,7 +304,7 @@ from
 --------------------------------------------------------------------------------
 
 --3000963 =	Hemoglobin (Hgb)
-drop table if exists #Table1_HOSPITAL_Score_Hemoglobin_Level_0;
+--drop table if exists #Table1_HOSPITAL_Score_Hemoglobin_Level_0;
 
 select distinct
 	  CB2.PERSON_ID
@@ -316,9 +317,9 @@ select distinct
 	, FIRST_VALUE(VALUE_AS_NUMBER) OVER(PARTITION BY CB2.VISIT_OCCURRENCE_ID ORDER BY M.MEASUREMENT_DATETIME DESC) AS Last_VALUE_AS_NUMBER
 into #Table1_HOSPITAL_Score_Hemoglobin_Level_0
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.Measurement as M
+	Measurement as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.MEASUREMENT_DATETIME between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 where M.Measurement_Concept_ID = 3000963
@@ -328,7 +329,7 @@ where M.Measurement_Concept_ID = 3000963
 ;
 
 
-drop table if exists #Table1_HOSPITAL_Score_Hemoglobin_Level_1;
+--drop table if exists #Table1_HOSPITAL_Score_Hemoglobin_Level_1;
 
 select
 	  PERSON_ID
@@ -353,7 +354,7 @@ group by
 ;
 
 
-drop table if exists #Table1_HOSPITAL_Score_Hemoglobin_Level_Last_12_Flag;
+--drop table if exists #Table1_HOSPITAL_Score_Hemoglobin_Level_Last_12_Flag;
 
 select 
 	  CB2.PERSON_ID
@@ -374,7 +375,7 @@ select
 	  end as Hemoglobin_Level_Last_12_Flag
 into #Table1_HOSPITAL_Score_Hemoglobin_Level_Last_12_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#Table1_HOSPITAL_Score_Hemoglobin_Level_1 AS H
 		on CB2.VISIT_OCCURRENCE_ID = H.VISIT_OCCURRENCE_ID
@@ -384,7 +385,7 @@ from
 --------------------------------------------------------------------------
 --Combine variables from temp tables
 --------------------------------------------------------------------------
-drop table if exists #Table1_HOSPITAL_Score_Part1;
+--drop table if exists #Table1_HOSPITAL_Score_Part1;
 
 select 
 	  L.PERSON_ID
@@ -455,7 +456,7 @@ from
 ------------------------------------------------------------------
 --Overall HOSPITAL Score
 -------------------------------------------------------------------
-drop table if exists #Table1_HOSPITAL_Score_Part2;
+--drop table if exists #Table1_HOSPITAL_Score_Part2;
 
 select 
 	  PERSON_ID
@@ -508,7 +509,10 @@ from
 
 
 
-drop table if exists AMI.Table1_HOSPITAL_Score;
+--drop table if exists Table1_HOSPITAL_Score;
+
+if exists (select * from sys.objects where name = 'Table1_HOSPITAL_Score' and type = 'u')
+    drop table Table1_HOSPITAL_Score
 
 select
 	*
@@ -521,7 +525,7 @@ select
 	 	Hemoglobin_Level_Last_12_Flag_Score + 
 	 	Sodium_Level_Last_135_Flag_Score
 	 ) as HOSPITAL_Score
-into AMI.Table1_HOSPITAL_Score
+into Table1_HOSPITAL_Score
 from
 	#Table1_HOSPITAL_Score_Part2
 ;

@@ -11,10 +11,11 @@ In-hospital ischemia
 Echocardiography
 */
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+USE OMOP_CDM  -- 10/15/2020
 GO
 
-drop table if exists #Table1_In_Hospital_Outcomes_HF_Stroke;
+----drop table if exists #Table1_In_Hospital_Outcomes_HF_Stroke;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -23,20 +24,20 @@ select CB2.PERSON_ID
 	, MAX(case when Ref.CONDITIONID in (281, 401)	then 1 else 0 end) as In_Hospital_HF_Flag
 	, MAX(case when Ref.CONDITIONID = 1010			then 1 else 0 end) as In_Hospital_Ischemia_Flag
 into #Table1_In_Hospital_Outcomes_HF_Stroke
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-		OMOP.CONDITION_OCCURRENCE as CO
+		CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 			and CB2.VISIT_OCCURRENCE_ID = CO.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Ref_Conditions_SNOMED as Ref
+		Ref_Conditions_SNOMED as Ref
 		on CO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
 
 
  --echocardiography
-drop table if exists #Table1_In_Hospital_Outcomes_Echo;
+----drop table if exists #Table1_In_Hospital_Outcomes_Echo;
 
  SELECT 
  	CB2.PERSON_ID
@@ -55,17 +56,17 @@ drop table if exists #Table1_In_Hospital_Outcomes_Echo;
 		)
 	  as Echocardiography_Flag
 into #Table1_In_Hospital_Outcomes_Echo
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-  		OMOP.PROCEDURE_OCCURRENCE as PO
+  		PROCEDURE_OCCURRENCE as PO
 		on CB2.VISIT_OCCURRENCE_ID = PO.VISIT_OCCURRENCE_ID
-  	left join OMOP.CONCEPT as C
+  	left join CONCEPT as C
   		on C.CONCEPT_ID = PO.PROCEDURE_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
 
 
-drop table if exists #Table1_HOSPITAL_Outcomes_Cardiac_Procedure;
+----drop table if exists #Table1_HOSPITAL_Outcomes_Cardiac_Procedure;
 
 select
 	CB2.PERSON_ID
@@ -76,13 +77,13 @@ select
 	, MAX(case when Ref.CONDITIONID = 1002 then 1 else 0 end) as Cardiac_Procedure_Flag
 into #Table1_HOSPITAL_Outcomes_Cardiac_Procedure
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	OMOP.PROCEDURE_OCCURRENCE as PO
+	PROCEDURE_OCCURRENCE as PO
 		on CB2.PERSON_ID = PO.PERSON_ID
 		and PO.Procedure_Date between CB2.Admit_date and CB2.DISCHARGE_DATE
 	left join 
-	[AMI].[Ref_Conditions_SNOMED] as Ref
+	[Ref_Conditions_SNOMED] as Ref
 		on Ref.TARGET_CONCEPT_ID = PO.PROCEDURE_CONCEPT_ID
 group by
 	  CB2.PERSON_ID
@@ -98,7 +99,11 @@ group by
  
  --combine temp tables
 
- drop table if exists AMI.Table1_In_Hospital_Outcomes;
+ --drop table if exists Table1_In_Hospital_Outcomes;
+
+ if exists (select * from sys.objects where name = 'Table1_In_Hospital_Outcomes' and type = 'u')
+    drop table Table1_In_Hospital_Outcomes
+
  
  select 
  	  HS.PERSON_ID
@@ -112,7 +117,7 @@ group by
 		when CP.Cardiac_Procedure_Flag is null then 0
 		else CP.Cardiac_Procedure_Flag
 	  end as Cardiac_Procedure_Flag
-into AMI.Table1_In_Hospital_Outcomes
+into Table1_In_Hospital_Outcomes
 from #Table1_In_Hospital_Outcomes_HF_Stroke as HS
 	left join #Table1_In_Hospital_Outcomes_Echo as E
 	on HS.PERSON_ID = E.PERSON_ID
@@ -132,7 +137,7 @@ select
 	,sum(In_Hospital_Ischemia_Flag) as Isch
 	,sum(Echocardiography_Flag) as Echo
 	,sum(Cardiac_Procedure_Flag) as Cardiac
-from AMI.Table1_In_Hospital_Outcomes
+from Table1_In_Hospital_Outcomes
 ;
 
 select In_Hospital_HF_Flag, count(*) from Table1_In_Hospital_Outcomes
