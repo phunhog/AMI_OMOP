@@ -22,7 +22,9 @@ Number of major depressive episodes
 Family history of depression
 */
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+
+USE OMOP_CDM -- 10/13/2020
 GO
 
 /*
@@ -36,7 +38,7 @@ Hypertension
 Chest Pain
 */
 
-drop table if exists #Table1_Patient_History1
+---drop table if exists #Table1_Patient_History1
 ;
 
 select CB2.PERSON_ID
@@ -54,13 +56,13 @@ select CB2.PERSON_ID
 	, MAX(case when AR.conditionid = 1003				then 1 else 0 end) as History_Chest_Pain_Flag     
 into #Table1_Patient_History1
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	OMOP.Condition_Occurrence as OCO
+	Condition_Occurrence as OCO
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		and OCO.Condition_Start_Date < CB2.ADMIT_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as AR
+	Ref_Conditions_SNOMED as AR
 		ON OCO.Condition_Concept_ID = AR.Target_Concept_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
@@ -70,7 +72,7 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 
 
 --Family history of depression-------------------------------------------------------------------------------------
-drop table if exists #Table1_Patient_History_Family_Depression_I10
+---drop table if exists #Table1_Patient_History_Family_Depression_I10
 ;
 
 --I10
@@ -80,9 +82,9 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when CO.CONDITION_SOURCE_VALUE = 'Z81.8'	then 1 else 0 end) as History_Family_Depression_I10_Flag
 into #Table1_Patient_History_Family_Depression_I10
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-		OMOP.CONDITION_OCCURRENCE as CO
+		CONDITION_OCCURRENCE as CO
 		on CB2.PERSON_ID = CO.PERSON_ID
 			and CO.CONDITION_START_DATE <= CB2.ADMIT_DATE
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
@@ -94,7 +96,7 @@ group by History_Family_Depression_I10_Flag;
 */
 
 --I9
-drop table if exists #Table1_Patient_History_Family_Depression_I9
+---drop table if exists #Table1_Patient_History_Family_Depression_I9
 ;
 
 select CB2.PERSON_ID
@@ -103,9 +105,9 @@ select CB2.PERSON_ID
 	, CB2.PRIM_DIAG
 	, MAX(case when O.OBSERVATION_SOURCE_VALUE = 'V17.0'	then 1 else 0 end) as History_Family_Depression_I9_Flag
 into #Table1_Patient_History_Family_Depression_I9
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-		OMOP.OBSERVATION as O
+		OBSERVATION as O
 		on CB2.PERSON_ID = O.PERSON_ID
 			and O.OBSERVATION_DATE <= CB2.ADMIT_DATE
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
@@ -118,7 +120,7 @@ group by History_Family_Depression_I9_Flag;
 
 
 --I9 and I10 combined
-drop table if exists #Table1_Patient_History_Family_Depression_Flag
+---drop table if exists #Table1_Patient_History_Family_Depression_Flag
 ;
 
 select 
@@ -148,7 +150,7 @@ group by Family_Depression_Flag;
 --De-duplicate multiples on the same day
 --Count up the number of episodes in the year prior to the admission (but only count them once for a given day if multiple)
 
-drop table if exists #Table1_Patient_History_Major_Depression_Flag
+---drop table if exists #Table1_Patient_History_Major_Depression_Flag
 ;
 
 select CB2.PERSON_ID
@@ -158,14 +160,14 @@ select CB2.PERSON_ID
 	, Max(case when Ref.conditionid = 431 then 1 else 0 end) as Major_Depression_Flag    
 into #Table1_Patient_History_Major_Depression_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-	OMOP.CONDITION_OCCURRENCE as OCO
+	CONDITION_OCCURRENCE as OCO
 		ON CB2.PERSON_ID = OCO.PERSON_ID
 		AND OCO.CONDITION_START_DATE <= CB2.ADMIT_DATE
 		AND OCO.CONDITION_START_DATE >= DateAdd(dd,-365, CB2.ADMIT_DATE)
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		on OCO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 where
 	Ref.conditionid = 431
@@ -174,7 +176,7 @@ group by
 ;
 
 
-drop table if exists #Table1_Patient_History_Major_Depression_Count
+---drop table if exists #Table1_Patient_History_Major_Depression_Count
 ;
 
 select PERSON_ID, VISIT_OCCURRENCE_ID, SUM(Major_Depression_Flag) as Major_Depression_Count
@@ -189,7 +191,10 @@ group by Major_Depression_Count;
  
 
 --Combine temp tables-----------------------------------------------------------------
- drop table if exists AMI.Table1_Patient_History;
+ ---drop table if exists Table1_Patient_History;
+
+ if exists (select * from sys.objects where name = 'Table1_Patient_History' and type = 'u')
+    drop table Table1_Patient_History
  
  select 
  	  H1.PERSON_ID
@@ -240,7 +245,7 @@ group by Major_Depression_Count;
 		then MDC.Major_Depression_Count
 		else 0
 	  end as Major_Depression_Count 
-into AMI.Table1_Patient_History
+into Table1_Patient_History
 from 
 	#Table1_Patient_History1 as H1
 	left join 
