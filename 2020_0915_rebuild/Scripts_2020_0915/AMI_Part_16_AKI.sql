@@ -1,12 +1,14 @@
 --AMI Readmissions Project: AKI Stage Variables
-USE AMI
+--USE AMI
+
+USE OMOP_CDM-- 10/15/2020
 GO
 
 --Part 1----------------------------------------------------------------------------
 --Get min and max dates from detail data to assign date range for creatinine values that need to be obtained.
 
 
-drop table if exists #AKI_Pat_Visit_Min;
+--drop table if exists #AKI_Pat_Visit_Min;
 
 select 
 	 CB2.PERSON_ID
@@ -15,7 +17,7 @@ select
 into 
 	#AKI_Pat_Visit_Min
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 group by 
 	CB2.PERSON_ID
 ;
@@ -31,7 +33,7 @@ group by
 --3007760		Creatinine [Mass/volume] in Arterial blood				Measurement	LOINC			Lab Test			S					21232-4
 
 
-drop table if exists #AKI_Creatinine_Labs;
+--drop table if exists #AKI_Creatinine_Labs;
 
 select 
 	M.*
@@ -39,7 +41,7 @@ into
 	#AKI_Creatinine_Labs
 from
 	#AKI_Pat_Visit_Min as V
-	left join OMOP.MEASUREMENT as M
+	left join MEASUREMENT as M
 		on V.PERSON_ID = M.PERSON_ID
 where
 	M.MEASUREMENT_CONCEPT_ID IN (3051825, 3016723, 3032033, 3007760) --LOINC = '38483-4', '2160-0'
@@ -48,7 +50,7 @@ where
 ;
 
 
-drop table if exists #AKI_Creatinine_Labs_2;
+--drop table if exists #AKI_Creatinine_Labs_2;
 
 select 
 	 L.*
@@ -61,9 +63,9 @@ into
 from 
 	#AKI_Creatinine_Labs AS L
 	left join
-	OMOP.VISIT_OCCURRENCE as VO
+	VISIT_OCCURRENCE as VO
 		on L.Person_ID = VO.Person_ID
-		and L.MEASUREMENT_DATETIME between VO.VISIT_START_DATETIME and VO.VISIT_END_DATETIME
+		and L.MEASUREMENT_DATETIME between VO.VISIT_START_TIME and VO.VISIT_END_TIME
 ;
 
 
@@ -76,7 +78,7 @@ from
 --Baseline_1 (Creatinine AVG 7-365 days before admission for outpatient visits)
 
 
-drop table if exists #AKI_Baseline_Creatinine_AVG;
+--drop table if exists #AKI_Baseline_Creatinine_AVG;
 
 select 
 	 CB2.VISIT_OCCURRENCE_ID
@@ -84,7 +86,7 @@ select
 into 
 	#AKI_Baseline_Creatinine_AVG
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.PERSON_ID = L.PERSON_ID
 where 
@@ -99,7 +101,7 @@ group by
 --Methodology Number 2 for baseline creatinine takes next priority if a value can be found using this methodology
 --Baseline_2 (Last creatinine value 7-730 days before admission for IP or OP visits).
 
-drop table if exists #AKI_Baseline_Creatinine_Last;
+--drop table if exists #AKI_Baseline_Creatinine_Last;
 
 select 
 	 CB2.VISIT_OCCURRENCE_ID
@@ -108,7 +110,7 @@ select
 into 
 	#AKI_Baseline_Creatinine_Last
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.PERSON_ID = L.PERSON_ID
 where  
@@ -119,7 +121,7 @@ where
 
 
 --Get last creatinine value only
-drop table if exists #AKI_Baseline_Creatinine_Last_2;
+--drop table if exists #AKI_Baseline_Creatinine_Last_2;
 
 select
 	  *
@@ -136,7 +138,7 @@ where RowNum = 1
 --3c
 --Baseline_3 (Creatinine minimum value 6 days before admit up to a day after discharge date).
 
-drop table if exists #AKI_Baseline_Creatinine_MIN;
+--drop table if exists #AKI_Baseline_Creatinine_MIN;
 
 select 
 	 CB2.VISIT_OCCURRENCE_ID
@@ -144,7 +146,7 @@ select
 into 
 	#AKI_Baseline_Creatinine_MIN
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.PERSON_ID = L.PERSON_ID
 where  
@@ -160,7 +162,7 @@ group by
 --Will use the first baseline creatinine available as the final baseline creatinine
 
 
-drop table if exists #AKI_Baseline_Creatinine_All;
+--drop table if exists #AKI_Baseline_Creatinine_All;
 
 Select
 	CB2.*
@@ -170,7 +172,7 @@ Select
 into
 	#AKI_Baseline_Creatinine_All
 From
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Baseline_Creatinine_AVG as B1
 		on CB2.VISIT_OCCURRENCE_ID = B1.VISIT_OCCURRENCE_ID
 	left join #AKI_Baseline_Creatinine_Last_2 as B2
@@ -182,7 +184,7 @@ From
 
 --3e
 --Use the first in priority order baseline creatinine available as the final baseline creatinine
-drop table if exists #AKI_Baseline_Creatinine_Final;
+--drop table if exists #AKI_Baseline_Creatinine_Final;
 
 Select
 	*
@@ -204,7 +206,7 @@ From
 --Anchor creatinine values include all of the creatinine values during an admission.
 --Also include creatinine values a day before and day after admission.
 
-drop table if exists #AKI_Creatinine_Labs_Anchor;
+--drop table if exists #AKI_Creatinine_Labs_Anchor;
 
 select distinct
 	  CB2.*
@@ -215,13 +217,13 @@ select distinct
 into 
 	#AKI_Creatinine_Labs_Anchor
 from	
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join #AKI_Creatinine_Labs_2 as L
 		on CB2.VISIT_OCCURRENCE_ID = L.VO_VISIT_OCCURRENCE_ID
 	left join #AKI_Baseline_Creatinine_Final as B
 		on CB2.VISIT_OCCURRENCE_ID = B.VISIT_OCCURRENCE_ID
 ;
---select * from AMI.COHORT_BASE_2
+--select * from COHORT_BASE_2
 
 
 --Part 5---------------------------------------------------------------------------------
@@ -229,7 +231,7 @@ from
 
 --5a
 --Add eGFR values to identify exclusions based on eGFR value.
-drop table if exists #AKI_Creatinine_Labs_Anchor_eGFR;
+--drop table if exists #AKI_Creatinine_Labs_Anchor_eGFR;
 
 select
 	*
@@ -340,7 +342,7 @@ from
 
 --5b
 ----Assign AKI Stage and exclude patients with ESRD (<15 eGFR)--------------------------------
-drop table if exists #AKI_Detail_No_ESRD;
+--drop table if exists #AKI_Detail_No_ESRD;
 
 select
 	  CA.*
@@ -364,7 +366,7 @@ from
 
 
 --Get only the last Cr measurement of the day
-drop table if exists #AKI_Detail_No_ESRD_Ordered;
+--drop table if exists #AKI_Detail_No_ESRD_Ordered;
 
 select
 	  *
@@ -389,7 +391,7 @@ order by
 
 
 --Get days between so that AKI duration can be obtained
-drop table if exists #AKI_Detail_Days_Between;
+--drop table if exists #AKI_Detail_Days_Between;
 
 select
 	A.*
@@ -417,7 +419,7 @@ from
 --select top 100 * from #AKI_Detail_Days_Between
 	
 
-drop table if exists #AKI_Detail_Days_Between_Grouped;
+--drop table if exists #AKI_Detail_Days_Between_Grouped;
 	
 Select
 	 visit_occurrence_id
@@ -449,7 +451,7 @@ group by
 ;
 
 
-drop table if exists #AKI_Duration;
+--drop table if exists #AKI_Duration;
 	
 Select
 	 visit_occurrence_id
@@ -488,7 +490,10 @@ from
 ;
 
 
-drop table if exists AMI.Table1_AKI_Stage;
+--drop table if exists Table1_AKI_Stage;
+
+if exists (select * from sys.objects where name = 'Table1_AKI_Stage' and type = 'u')
+    drop table Table1_AKI_Stage
 
 select
 	CB2.*
@@ -511,11 +516,11 @@ select
 		when AKI_Stage_Max = 3 then 1 else 0
 	 End as AKI_Stage_3_Flag
 into
-	AMI.Table1_AKI_Stage
+	Table1_AKI_Stage
 from 
-	ami.cohort_base_2 as CB2
+	cohort_base_2 as CB2
 	left join #AKI_Duration as D
 		on CB2.visit_occurrence_ID = D.visit_occurrence_id
 ;
 
---select top 100 * from AMI.Table1_AKI_Stage
+--select top 100 * from Table1_AKI_Stage

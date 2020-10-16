@@ -22,11 +22,12 @@ cardiac arrest at admission
 Total Score
 */
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+USE OMOP_CDM-- 10/15 2020
 GO
 
 --Existing variables
-drop table if exists #Table1_GRACE_Vars;
+--drop table if exists #Table1_GRACE_Vars;
 
 SELECT   
 		 CB2.PERSON_ID
@@ -38,20 +39,20 @@ SELECT
 	   , DI.STEMI_FLAG
 into #Table1_GRACE_Vars		
 FROM 
-	AMI.COHORT_BASE_2 as CB2
-		left join AMI.TABLE1_PATIENT_HISTORY as H
+	COHORT_BASE_2 as CB2
+		left join TABLE1_PATIENT_HISTORY as H
 			on CB2.VISIT_OCCURRENCE_ID = H.VISIT_OCCURRENCE_ID
-		left join AMI.TABLE1_Laboratories as L
+		left join TABLE1_Laboratories as L
 			on CB2.VISIT_OCCURRENCE_ID = L.VISIT_OCCURRENCE_ID
-		left join AMI.Table1_ENRICHD_Score as E
+		left join Table1_ENRICHD_Score as E
 			on CB2.VISIT_OCCURRENCE_ID = E.VISIT_OCCURRENCE_ID
-		left join AMI.Table1_Discharge_Information as DI
+		left join Table1_Discharge_Information as DI
 			on CB2.VISIT_OCCURRENCE_ID = DI.VISIT_OCCURRENCE_ID
 ;
 
 
 --In-hospital---------------------------------------------------------------------------
-drop table if exists #Table1_GRACE_InHospital_Vars;
+--drop table if exists #Table1_GRACE_InHospital_Vars;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -60,20 +61,20 @@ select CB2.PERSON_ID
 	, MAX(case when Ref.conditionid = 55	then 1 else 0 end) as In_Hospital_PCI_Flag
 	, MAX(case when Ref.conditionid = 202 then 1 else 0 end) as Cardiac_Arrest_Flag
 into #Table1_GRACE_InHospital_Vars
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.Condition_Occurrence as CO
+	Condition_Occurrence as CO
 		ON CB2.PERSON_ID = CO.PERSON_ID
 		and CO.CONDITION_START_DATE between CB2.ADMIT_DATE and CB2.DISCHARGE_DATE
 	left join
-	AMI.Ref_Conditions_SNOMED as Ref
+	Ref_Conditions_SNOMED as Ref
 		ON CO.CONDITION_CONCEPT_ID = Ref.TARGET_CONCEPT_ID
 group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG
 ;
 
 
 --Systolic BP-------------------------------------------------------------------------------
-drop table if exists #Table1_GRACE_Score_Systolic_BP_Avg;
+--drop table if exists #Table1_GRACE_Score_Systolic_BP_Avg;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -81,9 +82,9 @@ select CB2.PERSON_ID
 	, AVG(M.value_as_number) as Systolic_BP_Avg
 	--, max(M.unit_source_value) as Systolic_BP_Units
 into #Table1_GRACE_Score_Systolic_BP_Avg
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.MEASUREMENT as M
+	MEASUREMENT as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.Measurement_Date between CB2.Admit_Date and CB2.Discharge_Date
 where M.Measurement_Concept_ID = 3004249 --BP systolic
@@ -93,7 +94,7 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, CB2.PRIM_DIAG;
 --select * from Table1_GRACE_Score_Systolic_BP_Avg limit 100;
 
 --Heart Rate--------------------------------------------------------------------------------
-drop table if exists #Table1_GRACE_Score_Heart_Rate_Avg;
+--drop table if exists #Table1_GRACE_Score_Heart_Rate_Avg;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -101,9 +102,9 @@ select CB2.PERSON_ID
 	, AVG(M.value_as_number) as Heart_Rate_Avg
 	--, max(M.unit_source_value) as Heart_Rate_Units
 into #Table1_GRACE_Score_Heart_Rate_Avg
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.MEASUREMENT as M
+	MEASUREMENT as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.Measurement_Date between CB2.Admit_Date and CB2.Discharge_Date
 where M.Measurement_Concept_ID = 3027018 --Heart rate	Measurement
@@ -118,7 +119,7 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE;
 --ST segment axis.horizontal plane	3007722
 
 --For ST segment deviation use STEMI flag from discharge information
-drop table if exists #Table1_GRACE_Score_ST_Segment_Avg;
+--drop table if exists #Table1_GRACE_Score_ST_Segment_Avg;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -127,9 +128,9 @@ select CB2.PERSON_ID
 	--, max(M.unit_source_value) as ST_Segment_Units
 	, M.Measurement_Concept_ID
 into #Table1_GRACE_Score_ST_Segment_Avg
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.MEASUREMENT as M
+	MEASUREMENT as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.Measurement_Date between CB2.Admit_Date and CB2.Discharge_Date
 where M.Measurement_Concept_ID = 3007722 --ST segment axis.horizontal plane
@@ -142,7 +143,7 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, M.Measurement_C
 --Cardiac enzymes----------------------------------------------------------------------
 
 --Troponin I-------------------
-drop table if exists #Table1_GRACE_Score_Troponin_I_Avg;
+--drop table if exists #Table1_GRACE_Score_Troponin_I_Avg;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -153,9 +154,9 @@ select CB2.PERSON_ID
 		when AVG(M.value_as_number) >= .04 then 1 else 0
 	  end as Trop_I_Cardiac_Marker_Elevation_Flag
 into #Table1_GRACE_Score_Troponin_I_Avg
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.MEASUREMENT as M
+	MEASUREMENT as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.Measurement_Date between CB2.Admit_Date and CB2.Discharge_Date
 where M.Measurement_Concept_ID IN
@@ -173,7 +174,7 @@ group by
 
 
 --Troponin T-------------------
-drop table if exists #Table1_GRACE_Score_Troponin_T_Avg;
+--drop table if exists #Table1_GRACE_Score_Troponin_T_Avg;
 
 select CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
@@ -185,9 +186,9 @@ select CB2.PERSON_ID
 			then 1 else 0
 	  end as Trop_T_Cardiac_Marker_Elevation_Flag
 into #Table1_GRACE_Score_Troponin_T_Avg
-from AMI.COHORT_BASE_2 as CB2
+from COHORT_BASE_2 as CB2
 	left join 
-	OMOP.MEASUREMENT as M
+	MEASUREMENT as M
 		on CB2.PERSON_ID = M.PERSON_ID
 		and M.Measurement_Date between CB2.Admit_Date and CB2.Discharge_Date
 where M.Measurement_Concept_ID IN
@@ -202,7 +203,7 @@ group by CB2.PERSON_ID, CB2.VISIT_OCCURRENCE_ID, CB2.ADMIT_DATE, M.Measurement_C
 
 
 --Combine temp tables-------------------------------------------------------------------------
-drop table if exists #Table1_GRACE_Score1;
+--drop table if exists #Table1_GRACE_Score1;
 
 Select
 		 V.PERSON_ID
@@ -255,7 +256,7 @@ left join #Table1_GRACE_Score_Troponin_T_Avg as TT
 
 
 --Grace score elements
-drop table if exists #Table1_GRACE_Score2;
+--drop table if exists #Table1_GRACE_Score2;
 
 select
 		   PERSON_ID
@@ -336,7 +337,10 @@ into #Table1_GRACE_Score2
 from #Table1_GRACE_Score1;
 
 --Final table---------------------------------------------------------
-drop table if exists AMI.Table1_GRACE_Score;
+--drop table if exists Table1_GRACE_Score;
+
+if exists (select * from sys.objects where name = 'Table1_GRACE_Score' and type = 'u')
+    drop table Table1_GRACE_Score
 
 select
 	GS2.*
@@ -350,7 +354,7 @@ select
 	  + Grace_Score_Cardiac_Arrest
 	  + Grace_Score_STEMI
 	 ) as Grace_Score
-into AMI.Table1_GRACE_Score
+into Table1_GRACE_Score
 from #Table1_GRACE_Score2 as GS2;
 
 /*

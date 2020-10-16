@@ -18,11 +18,12 @@ Comorbidities (Charlson score in Comorbidities)
 ED visits last 6 months (Administrative Data)
 */
 
-USE AMI
+--USE AMI
+USE OMOP_CDM -- 10/15/20202
 GO
 
 
-drop table if exists #LACE_Part1;
+--drop table if exists #LACE_Part1;
 
 Select 
 	 HS.PERSON_ID
@@ -41,11 +42,11 @@ Select
 		when HS.LOS >= 14 then 7
 	 end as LACE_LOS_Score
 into #LACE_Part1
-from AMI.Table1_HOSPITAL_Score as HS
+from Table1_HOSPITAL_Score as HS
 ;
 
 
-drop table if exists #LACE_Part2;
+--drop table if exists #LACE_Part2;
 
 select
 	 C.PERSON_ID
@@ -58,11 +59,11 @@ select
 		when C.Charlson_Deyo_Score >= 4 then 5
 	 end as LACE_Charlson_Score
 into #LACE_Part2
-from AMI.Table1_Comorbidities as C
+from Table1_Comorbidities as C
 ;
 
 
-drop table if exists #LACE_Part3;
+--drop table if exists #LACE_Part3;
 
 select
 	 A.PERSON_ID
@@ -75,11 +76,14 @@ select
 		when A.ED_Visit_Prior_180_Days_Count >= 4 then 4
 	 end as LACE_ED_Score
 into #LACE_Part3
-from AMI.Table1_Admin_Data as A
+from Table1_Admin_Data as A
 ;
 
 
-drop table if exists AMI.Table1_LACE_Score;
+--drop table if exists Table1_LACE_Score;
+
+if exists (select * from sys.objects where name = 'Table1_LACE_Score' and type = 'u')
+    drop table Table1_LACE_Score
 
 Select 
 	 L1.PERSON_ID
@@ -93,7 +97,7 @@ Select
 	  + L2.LACE_Charlson_Score
 	  + L3.LACE_ED_Score
 	  ) as LACE_Score
-into AMI.Table1_LACE_Score
+into Table1_LACE_Score
 from #LACE_Part1 as L1
 left join
 	#LACE_Part2 as L2
