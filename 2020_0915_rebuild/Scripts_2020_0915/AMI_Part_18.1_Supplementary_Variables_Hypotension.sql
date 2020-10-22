@@ -2,7 +2,8 @@
 -----------------------------------------------------------------------------------------
 --AMI Readmissions Project---------------------------------------------------------------
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+USE OMOP_CDM
 GO
 
 --Code	Description	icd version
@@ -105,38 +106,41 @@ order by concept_ID_Snomed
 --4120275
 --443447
 
-drop table if exists AMI.Hypotension_Flag;
+--drop table if exists AMI.Hypotension_Flag;
 
+if exists (select * from sys.objects where name = 'Hypotension_Flag' and type = 'u')
+    drop table Hypotension_Flag
+;
 
 with Hypotension
 as
 (
-select
-	CB2.PERSON_ID
-	, CB2.VISIT_OCCURRENCE_ID
-	, CB2.ADMIT_DATETIME
-	, CB2.ADMIT_DATETIME - 1 as Start_Range
-	, OCO.[CONDITION_START_DATETIME]
-	, CB2.DISCHARGE_DATETIME
-from
-	AMI.COHORT_BASE_2 as CB2
-	left join
-	[OMOP].[CONDITION_OCCURRENCE] as OCO
-		on CB2.PERSON_ID = OCO.Person_ID
-		and OCO.[CONDITION_START_DATETIME] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
-where
-	OCO.[CONDITION_CONCEPT_ID] IN
-	(
-		314432
-		,316447
-		,317002
-		,319041
-		,4112334
-		,4120275
-		,443447
-	)
+		select
+			CB2.PERSON_ID
+			, CB2.VISIT_OCCURRENCE_ID
+			, CB2.ADMIT_DATETIME
+			, DateAdd(dd,-1,CB2.ADMIT_DATETIME) as Start_Range
+			, OCO.[CONDITION_START_DATE]
+			, CB2.DISCHARGE_DATETIME
+		from
+			COHORT_BASE_2 as CB2
+			left join
+			[CONDITION_OCCURRENCE] as OCO
+				on CB2.PERSON_ID = OCO.Person_ID
+				--and OCO.[CONDITION_START_DATETIME] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+				and OCO.[CONDITION_START_DATE] between (DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) and (CB2.DISCHARGE_DATETIME)
+		where
+			OCO.[CONDITION_CONCEPT_ID] IN
+			(
+				314432
+				,316447
+				,317002
+				,319041
+				,4112334
+				,4120275
+				,443447
+			)
 )
-
 
 select distinct
 	CB2.PERSON_ID
@@ -146,14 +150,15 @@ select distinct
 		then 1 else 0
 	  End as Hypotension_Flag
 into
-	AMI.Hypotension_Flag
+	Hypotension_Flag
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	Hypotension as H
 		on CB2.PERSON_ID = H.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = H.VISIT_OCCURRENCE_ID
-;
+		
+
 
 
 --select VISIT_OCCURRENCE_ID, count(*) from AMI.Hypotension_Flag group by VISIT_OCCURRENCE_ID having count(*) > 1

@@ -2,7 +2,8 @@
 -----------------------------------------------------------------------------------------
 --AMI Readmissions Project---------------------------------------------------------------
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+USE OMOP_CDM -- 10/16/2020
 GO
 
 /*
@@ -255,8 +256,11 @@ order by concept_ID_Snomed
 --443567
 --444269
 
-drop table if exists AMI.Shock_Flag;
+--drop table if exists AMI.Shock_Flag;
 
+if exists (select * from sys.objects where name = 'Shock_Flag' and type = 'u')
+    drop table Shock_Flag
+	;
 
 with Shock
 as
@@ -265,15 +269,17 @@ select
 	CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
 	, CB2.ADMIT_DATETIME
-	, CB2.ADMIT_DATETIME - 1 as Start_Range
-	, OCO.[CONDITION_START_DATETIME]
+	--, CB2.ADMIT_DATETIME - 1 as Start_Range
+	,(DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) as Start_Range
+	, OCO.[CONDITION_START_DATE]
 	, CB2.DISCHARGE_DATETIME
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	[OMOP].[CONDITION_OCCURRENCE] as OCO
+	[CONDITION_OCCURRENCE] as OCO
 		on CB2.PERSON_ID = OCO.Person_ID
-		and OCO.[CONDITION_START_DATETIME] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+		--and OCO.[CONDITION_START_DATE] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+		and OCO.[CONDITION_START_DATE] between (DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) and (CB2.DISCHARGE_DATETIME)
 where
 	OCO.[CONDITION_CONCEPT_ID] IN
 	(
@@ -323,9 +329,9 @@ select distinct
 		then 1 else 0
 	  End as Shock_Flag
 into
-	AMI.Shock_Flag
+	Shock_Flag
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	Shock as S
 		on CB2.PERSON_ID = S.PERSON_ID

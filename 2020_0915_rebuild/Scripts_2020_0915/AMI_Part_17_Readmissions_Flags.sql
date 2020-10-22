@@ -7,11 +7,12 @@
 --Identify Readmissions and planned readmissions----------------------------------------
 --Uses CCS codes from AHRQ based on CMS guidelines for planned readmissions (these codes are not in OMOP).
 
-USE AMI
+--USE AMI
+USE OMOP_CDM -- 10/16/2020
 GO
 
 
-drop table if exists #AMI_Index_Admission_Flag;
+--drop table if exists #AMI_Index_Admission_Flag;
 
 select 
 	 CB2.*
@@ -22,16 +23,16 @@ select
 into
 	#AMI_Index_Admission_Flag
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-		AMI.Table1_Demographics as D
+		Table1_Demographics as D
 		on CB2.PERSON_ID = D.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = D.VISIT_OCCURRENCE_ID
 ;
 
 
 --Identify readmission within 30 days of index admission
-drop table if exists #AMI_30_Day_Readmit;
+--drop table if exists #AMI_30_Day_Readmit;
 
 select
 	 datediff(dd, I.Index_Discharge_Date, I.Admit_Date) as Days_to_Readmit
@@ -50,7 +51,7 @@ where
 
 
 --Get only first readmission
-drop table if exists #AMI_30_Day_Readmit_First;
+--drop table if exists #AMI_30_Day_Readmit_First;
 
 select 
 	*
@@ -65,17 +66,17 @@ where
 
 
 --PR1: (Procedures always planned) Procedure CCS 64, 105, 134, 135, 176
-drop table if exists #Planned_Readmit_PR1;
+--drop table if exists #Planned_Readmit_PR1;
 
 select R.person_id, sum(1) as Planned_Readmit_PR1_Count
 into #Planned_Readmit_PR1
 from
 	#AMI_30_Day_Readmit_First as R
 	join
-	OMOP.PROCEDURE_OCCURRENCE as P
+	PROCEDURE_OCCURRENCE as P
 		on R.visit_occurrence_id = P.VISIT_OCCURRENCE_ID
 	join
-	AMI.REF_CONDITION_CODES as CCS
+	REF_CONDITION_CODES as CCS
 		on P.PROCEDURE_SOURCE_VALUE = CCS.CODE_DECIMAL
 where 
 	CCS.CODE_TYPE IN ('I10_PR', 'I9_PR')
@@ -86,17 +87,17 @@ group by
 
 
 --PR2: (Diagnoses always planned) Procedure CCS 45, 194, 196, 254
-drop table if exists #Planned_Readmit_PR2;
+--drop table if exists #Planned_Readmit_PR2;
 
 select R.person_id, sum(1) as Planned_Readmit_PR2_Count
 into #Planned_Readmit_PR2
 from
 	#AMI_30_Day_Readmit_First as R
 	join
-		OMOP.Condition_OCCURRENCE as C
+		Condition_OCCURRENCE as C
 		on R.visit_occurrence_id = C.VISIT_OCCURRENCE_ID
 	join
-		AMI.REF_CONDITION_CODES as CCS
+		REF_CONDITION_CODES as CCS
 		on C.Condition_SOURCE_VALUE = CCS.CODE_DECIMAL
 where 
 	CCS.CODE_TYPE IN ('I10_DX', 'I9_DX')
@@ -110,17 +111,17 @@ group by
 
 
 --PR3: (Procedures sometimes planned)
-drop table if exists #Planned_Readmit_PR3;
+--drop table if exists #Planned_Readmit_PR3;
 
 select R.person_id, sum(1) as Planned_Readmit_PR3_Count
 into #Planned_Readmit_PR3
 from
 	#AMI_30_Day_Readmit_First as R
 	join
-	OMOP.PROCEDURE_OCCURRENCE as P
+	PROCEDURE_OCCURRENCE as P
 		on R.visit_occurrence_id = P.VISIT_OCCURRENCE_ID
 	join
-	AMI.REF_CONDITION_CODES as CCS
+	REF_CONDITION_CODES as CCS
 		on P.PROCEDURE_SOURCE_VALUE = CCS.CODE_DECIMAL
 where 
 		(
@@ -188,17 +189,17 @@ group by
 
 
 --PR4: (Acute diagnoses)
-drop table if exists #Planned_Readmit_PR4;
+--drop table if exists #Planned_Readmit_PR4;
 
 select R.person_id, sum(1) as Planned_Readmit_PR4_Count
 into #Planned_Readmit_PR4
 from
 	#AMI_30_Day_Readmit_First as R
 	join
-		OMOP.Condition_OCCURRENCE as C
+		Condition_OCCURRENCE as C
 		on R.visit_occurrence_id = C.VISIT_OCCURRENCE_ID
 	join
-		AMI.REF_CONDITION_CODES as CCS
+		REF_CONDITION_CODES as CCS
 		on C.Condition_SOURCE_VALUE = CCS.CODE_DECIMAL
 where 
 (	
@@ -537,7 +538,7 @@ group by
 ;
 
 
-drop table if exists #AMI_Planned_Readmit_Flag_Components;
+--drop table if exists #AMI_Planned_Readmit_Flag_Components;
 select person_id, 1 as PR1_Flag, 0 as PR2_Flag, 0 as PR3_Flag, 0 as PR4_Flag
 into #AMI_Planned_Readmit_Flag_Components
 from #Planned_Readmit_PR1;
@@ -554,7 +555,7 @@ insert into #AMI_Planned_Readmit_Flag_Components
 select person_id, 0, 0, 0, 1
 from #Planned_Readmit_PR4;
 
-drop table if exists #AMI_Planned_Readmit_Flag_All;
+--drop table if exists #AMI_Planned_Readmit_Flag_All;
 select person_id, max(PR1_Flag) as PR1_Flag, max(PR2_Flag) as PR2_Flag, max(PR3_Flag) as PR3_Flag, max(PR4_Flag) as PR4_Flag
 into #AMI_Planned_Readmit_Flag_All
 from #AMI_Planned_Readmit_Flag_Components
@@ -562,7 +563,7 @@ group by person_id;
 
 --select * from AMI_Planned_Readmit_Flag_All;
 
-drop table if exists #AMI_Planned_Readmit_Patients;
+--drop table if exists #AMI_Planned_Readmit_Patients;
 select
 	person_id,
 	case
@@ -590,7 +591,10 @@ from
 
 --Identify index admissions that have a readmit or planned readmit
 
-drop table if exists AMI.Readmissions_Final;
+--drop table if exists Readmissions_Final;
+
+if exists (select * from sys.objects where name = 'Readmissions_Final' and type = 'u')
+    drop table Readmissions_Final
 select 
 	 CB2.PERSON_ID
 	,CB2.VISIT_OCCURRENCE_ID
@@ -622,18 +626,18 @@ select
 			else 0
 	 end as Planned_Readmit_Present_30_Day_Flag	
 into
-	AMI.Readmissions_Final
+	Readmissions_Final
 from 
 	#AMI_Index_Admission_Flag as CB2
 ;
 	
 	
---select * from AMI.Readmissions_Final;
---select count(*) from AMI.Readmissions_Final;
+--select * from Readmissions_Final;
+--select count(*) from Readmissions_Final;
 /*
 select sum(index_admission_flag) as Index_Admits, sum(readmit_record_30_day_flag) as r_record, sum(planned_readmit_record_30_day_flag) as pr_record,
 		sum(READMIT_PRESENT_30_DAY_FLAG) as r_present, sum(PLANNED_READMIT_PRESENT_30_DAY_FLAG) as pr_present
-from AMI.Readmissions_Final
+from Readmissions_Final
 where index_admission_flag = 1;
 
 */
@@ -641,7 +645,7 @@ where index_admission_flag = 1;
 /*
 select sum(index_admission_flag) as Index_Admits, sum(readmit_record_30_day_flag) as r_record, sum(planned_readmit_record_30_day_flag) as pr_record,
 		sum(READMIT_PRESENT_30_DAY_FLAG) as r_present, sum(PLANNED_READMIT_PRESENT_30_DAY_FLAG) as pr_present
-from AMI.Readmissions_Final
+from Readmissions_Final
 where index_admission_flag = 0;
 
 */

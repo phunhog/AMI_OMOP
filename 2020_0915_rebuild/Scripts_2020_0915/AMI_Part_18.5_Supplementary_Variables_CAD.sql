@@ -2,7 +2,9 @@
 -----------------------------------------------------------------------------------------
 --AMI Readmissions Project---------------------------------------------------------------
 -----------------------------------------------------------------------------------------
-use AMI
+--use AMI
+
+USE OMOP_CDM
 GO
 
 --CAD diagnoses------------
@@ -170,7 +172,10 @@ order by concept_ID_Snomed
 */
 
 
-drop table if exists AMI.CAD_Flag;
+--drop table if exists AMI.CAD_Flag;
+
+if exists (select * from sys.objects where name = 'CAD_Flag' and type = 'u')
+    drop table CAD_Flag;
 
 with CAD
 as
@@ -179,15 +184,17 @@ select
 	CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
 	, CB2.ADMIT_DATETIME
-	, CB2.ADMIT_DATETIME - 1 as Start_Range
-	, OCO.[CONDITION_START_DATETIME]
+	--, CB2.ADMIT_DATETIME - 1 as Start_Range
+	,(DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) as Start_Range
+	, OCO.[CONDITION_START_DATE]
 	, CB2.DISCHARGE_DATETIME
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	[OMOP].[CONDITION_OCCURRENCE] as OCO
+	[CONDITION_OCCURRENCE] as OCO
 		on CB2.PERSON_ID = OCO.Person_ID
-		and OCO.[CONDITION_START_DATETIME] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+		--and OCO.[CONDITION_START_DATE] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+		and OCO.[CONDITION_START_DATE] between (DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) and (CB2.DISCHARGE_DATETIME)
 where
 	OCO.[CONDITION_CONCEPT_ID] IN
 	(
@@ -245,9 +252,9 @@ select distinct
 		then 1 else 0
 	  End as CAD_Flag
 into
-	AMI.CAD_Flag
+	CAD_Flag
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	CAD as H
 		on CB2.PERSON_ID = H.PERSON_ID

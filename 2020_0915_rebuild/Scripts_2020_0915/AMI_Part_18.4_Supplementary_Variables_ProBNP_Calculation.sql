@@ -1,24 +1,25 @@
 -----------------------------------------------------------------------------------------
 --AMI Readmissions Project---------------------------------------------------------------
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI
+USE OMOP_CDM --10/16/2020
 GO
 
 /*
-AMI.Table1_Laboratories
+Table1_Laboratories
 --contains bnp and hemoglobin
 
-select count(*) from AMI.Table1_Laboratories as L where L.[BNP_Last_Date] is not null
+select count(*) from Table1_Laboratories as L where L.[BNP_Last_Date] is not null
 --10248
 
-select count(*) from AMI.Table1_Laboratories as L where L.[proBNP_Last_Date] is not null
+select count(*) from Table1_Laboratories as L where L.[proBNP_Last_Date] is not null
 --46
 
-select count(*) from AMI.Table1_Laboratories as L where L.[BNP_Last_Date] is  null and L.[proBNP_Last_Date] is not null
+select count(*) from Table1_Laboratories as L where L.[BNP_Last_Date] is  null and L.[proBNP_Last_Date] is not null
 --17
 */
 
-drop table if exists #BNP_Data;
+--drop table if exists #BNP_Data;
 
 select
 	L.PERSON_ID
@@ -29,9 +30,9 @@ select
 into
 	#BNP_Data
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	AMI.Table1_Laboratories as L
+	Table1_Laboratories as L
 		on CB2.PERSON_ID = L.PERSON_ID
 		and cb2.VISIT_OCCURRENCE_ID = L.VISIT_OCCURRENCE_ID
 ;
@@ -54,7 +55,7 @@ from
 --8040 afetr expanding to 90 days before
 --out of 17556
 
-drop table if exists #BNP_Creatinine;
+--drop table if exists #BNP_Creatinine;
 
 Select
 	CB2.PERSON_ID
@@ -69,7 +70,7 @@ Select
 into 
 	#BNP_Creatinine
 from
-	AMI.Cohort_Base_2 as CB2
+	Cohort_Base_2 as CB2
 	left join
 	(
 		select
@@ -92,7 +93,7 @@ from
 					, row_number() over (partition by B.PERSON_ID, B.VISIT_OCCURRENCE_ID, B.BNP_Last_Date order by M.MEASUREMENT_DATE desc) as rownum
 				from
 					#BNP_Data as B
-					left join OMOP.MEASUREMENT as M
+					left join MEASUREMENT as M
 						on B.PERSON_ID = M.PERSON_ID
 						and	M.MEASUREMENT_DATE between dateadd(dd, -90, B.BNP_Last_Date) and B.BNP_Last_Date
 				where
@@ -119,7 +120,7 @@ from
 --3038553	Body mass index	Measurement	LOINC	Clinical Observation	S	39156-5
 
 --Weight
-drop table if exists #BNP_Creatinine_Weight;
+--drop table if exists #BNP_Creatinine_Weight;
 
 Select
 	CB2.PERSON_ID
@@ -134,7 +135,7 @@ Select
 into 
 	#BNP_Creatinine_Weight
 from
-	AMI.Cohort_Base_2 as CB2
+	Cohort_Base_2 as CB2
 	left join
 	(
 		select
@@ -157,7 +158,7 @@ from
 					, row_number() over (partition by B.PERSON_ID, B.VISIT_OCCURRENCE_ID, B.BNP_Creatinine_Date order by M.MEASUREMENT_DATE desc) as rownum
 				from
 					#BNP_Creatinine as B
-					left join OMOP.MEASUREMENT as M
+					left join MEASUREMENT as M
 						on B.PERSON_ID = M.PERSON_ID
 						and	M.MEASUREMENT_DATE between dateadd(dd, -365, B.BNP_Creatinine_Date) and B.BNP_Creatinine_Date
 				where
@@ -172,7 +173,7 @@ from
 --select count(*) from #BNP_Creatinine_Weight as B where B.BNP_Creatinine_Weight_Value is not null and B.Index_Admission_Flag = 1
 --2736 out of 9238
 
-drop table if exists #BNP_Creatinine_Height;
+--drop table if exists #BNP_Creatinine_Height;
 
 Select
 	CB2.PERSON_ID
@@ -187,7 +188,7 @@ Select
 into 
 	#BNP_Creatinine_Height
 from
-	AMI.Cohort_Base_2 as CB2
+	Cohort_Base_2 as CB2
 	left join
 	(
 		select
@@ -210,7 +211,7 @@ from
 					, row_number() over (partition by B.PERSON_ID, B.VISIT_OCCURRENCE_ID, B.BNP_Creatinine_Date order by M.MEASUREMENT_DATE desc) as rownum
 				from
 					#BNP_Creatinine as B
-					left join OMOP.MEASUREMENT as M
+					left join MEASUREMENT as M
 						on B.PERSON_ID = M.PERSON_ID
 						and	M.MEASUREMENT_DATE between dateadd(dd, -365, B.BNP_Creatinine_Date) and B.BNP_Creatinine_Date
 				where
@@ -227,7 +228,7 @@ from
 --1928 of 9238
 
 --CCr calculation
-drop table if exists #CCr_Components;
+--drop table if exists #CCr_Components;
 
 select
 	C.PERSON_ID
@@ -248,7 +249,7 @@ from
 
 
 
-drop table if exists #CCr_Values;
+--drop table if exists #CCr_Values;
 
 select
 	PERSON_ID
@@ -271,9 +272,9 @@ from
 
 -----------------------------------------------------------
 --For probnp calculation, we need:
---Age(#BNP_BMI), gender(#BNP_BMI), Afib_Flag(AMI.AFib_Flag), BMI(#BNP_BMI), CCr(#CCr_Values), Hemoglobin(#BNP_Hemoglobin)
+--Age(#BNP_BMI), gender(#BNP_BMI), Afib_Flag(AFib_Flag), BMI(#BNP_BMI), CCr(#CCr_Values), Hemoglobin(#BNP_Hemoglobin)
 ----------------------------------------------------------------
-drop table if exists #BNP_BMI;
+--drop table if exists #BNP_BMI;
 
 Select
 	CB2.PERSON_ID
@@ -288,7 +289,7 @@ Select
 into 
 	#BNP_BMI
 from
-	AMI.Cohort_Base_2 as CB2
+	Cohort_Base_2 as CB2
 	left join
 	(
 		select
@@ -311,7 +312,7 @@ from
 					, row_number() over (partition by B.PERSON_ID, B.VISIT_OCCURRENCE_ID, B.BNP_Last_Date order by M.MEASUREMENT_DATE desc) as rownum
 				from
 					#BNP_Data as B
-					left join OMOP.MEASUREMENT as M
+					left join MEASUREMENT as M
 						on B.PERSON_ID = M.PERSON_ID
 						and	M.MEASUREMENT_DATE between dateadd(dd, -365, B.BNP_Last_Date) and B.BNP_Last_Date
 				where
@@ -327,7 +328,7 @@ from
 
 
 
-drop table if exists #BNP_Hemoglobin;
+--drop table if exists #BNP_Hemoglobin;
 
 Select
 	CB2.PERSON_ID
@@ -341,7 +342,7 @@ Select
 into 
 	#BNP_Hemoglobin
 from
-	AMI.Cohort_Base_2 as CB2
+	Cohort_Base_2 as CB2
 	left join
 	(
 		select
@@ -365,7 +366,7 @@ from
 				
 				from
 					#BNP_Data as B
-					left join OMOP.MEASUREMENT as M
+					left join MEASUREMENT as M
 						on B.PERSON_ID = M.PERSON_ID
 						and	M.MEASUREMENT_DATE between dateadd(dd, -365, B.BNP_Last_Date) and B.BNP_Last_Date
 				where
@@ -381,9 +382,9 @@ from
 
 
 
-drop table if exists #proBNP_Vars;
+--drop table if exists #proBNP_Vars;
 
---Age(#BNP_BMI), gender(#BNP_BMI), Afib_Flag(AMI.AFib_Flag), BMI(#BNP_BMI), CCr(#CCr_Values), Hemoglobin(#BNP_Hemoglobin)
+--Age(#BNP_BMI), gender(#BNP_BMI), Afib_Flag(AFib_Flag), BMI(#BNP_BMI), CCr(#CCr_Values), Hemoglobin(#BNP_Hemoglobin)
 select
 	B.PERSON_ID
 	, B.VISIT_OCCURRENCE_ID
@@ -408,14 +409,14 @@ from
 		on B.PERSON_ID = C.PERSON_ID
 		and B.VISIT_OCCURRENCE_ID = C.VISIT_OCCURRENCE_ID
 	left join
-	AMI.AFib_Flag as A
+	AFib_Flag as A
 		on B.PERSON_ID = A.PERSON_ID
 		and B.VISIT_OCCURRENCE_ID = A.VISIT_OCCURRENCE_ID
 ;
 
 
 --ProBNP calculation moving to R code---------
---drop table if exists #proBNP_Components;
+----drop table if exists #proBNP_Components;
 
 --select
 --	P.person_id
@@ -465,7 +466,7 @@ from
 --;
 
 
---drop table if exists #proBNP_Exponent;
+----drop table if exists #proBNP_Exponent;
 
 --need to cube some of these: check equation
 
@@ -489,7 +490,7 @@ from
 ----select * from #proBNP_Exponent
 
 
---drop table if exists AMI.proBNP_Calculation;
+----drop table if exists proBNP_Calculation;
 
 --select
 --	P.PERSON_ID
@@ -502,12 +503,19 @@ from
 --		else null
 --	  End as proBNP_Calculated
 --into
---	 AMI.proBNP_Calculation
+--	 proBNP_Calculation
 --from	
 --	#proBNP_Exponent as P
 --;
 
-drop table if exists AMI.proBNP_Calculation;
+--drop table if exists proBNP_Calculation;
+
+if exists (select * from sys.objects where name = 'proBNP_Calculation' and type = 'u')
+    drop table proBNP_Calculation
+
+
+;
+
 
 Select
 	CB2.PERSON_ID
@@ -523,9 +531,9 @@ Select
 	, P.AFib_Flag as proBNP_Calc_AFib_Flag
 	, P.BNP_Hemoglobin_Value as proBNP_Calc_BNP_Hemoglobin_Value
 into 
-	AMI.proBNP_Calculation	
+	proBNP_Calculation	
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	#BNP_Creatinine_Weight as W
 		on CB2.PERSON_ID = W.PERSON_ID
@@ -543,8 +551,8 @@ from
 --select count(*) from #proBNP_Exponent where proBNP_exponent is not null and Index_Admission_Flag = 1
 ----2426 of 9238
 
---select count(*) from  AMI.proBNP_Calculation where proBNP_Calculated is not null and Index_Admission_Flag = 1
+--select count(*) from  proBNP_Calculation where proBNP_Calculated is not null and Index_Admission_Flag = 1
 --1552
 
---select count(*) from  AMI.proBNP_Calculation where BNP_BMI_Value is not null and Index_Admission_Flag = 1
+--select count(*) from  proBNP_Calculation where BNP_BMI_Value is not null and Index_Admission_Flag = 1
 --3548

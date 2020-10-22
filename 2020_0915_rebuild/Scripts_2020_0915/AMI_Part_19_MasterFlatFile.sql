@@ -10,19 +10,26 @@ Combine values in table MasterFlatFile from parts created previously.
 */
 -----------------------------------------------------------------------------------------
 
---drop table AMI.MasterFlatFile if exists;
+--drop table MasterFlatFile if exists;
 
 
 --****************************  need to make sure name data is present (ref_person using MRN)-----------------------------------
-	--DONE add AMI.Table1_Rehabilitation for source of Rehab_Flag
+	--DONE add Table1_Rehabilitation for source of Rehab_Flag
 	--DONE add new aki stage vars
-	--DONE add new vessel vars from AMI.Table1_Presentation_Disease
-	--DONE add AMI.Hypotension_Flag
-	--DONE add AMI.Shock_Flag
-	--DONE add AMI.AFib_Flag
-	--DONE add AMI.proBNP_Calculation
+	--DONE add new vessel vars from Table1_Presentation_Disease
+	--DONE add Hypotension_Flag
+	--DONE add Shock_Flag
+	--DONE add AFib_Flag
+	--DONE add proBNP_Calculation
 
-drop table if exists AMI.MasterFlatFile;
+USE OMOP_CDM -- 10/16/2020
+go
+
+--drop table if exists MasterFlatFile;
+
+if exists (select * from sys.objects where name = 'MasterFlatFile' and type = 'u')
+    drop table MasterFlatFile
+;
 
 select 
 	 CB2.*
@@ -297,105 +304,105 @@ select
 	,pro.proBNP_Calc_AFib_Flag
 	,pro.proBNP_Calc_BNP_Hemoglobin_Value
 into
-	AMI.MasterFlatFile
+	MasterFlatFile
 from 
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join 
-		AMI.Table1_Prior_Month_Diagnosis as P30
+		Table1_Prior_Month_Diagnosis as P30
 		on CB2.PERSON_ID = P30.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = P30.VISIT_OCCURRENCE_ID
 		and CB2.ADMIT_DATE = P30.ADMIT_DATE
 		and CB2.PRIM_DIAG = P30.PRIM_DIAG
 	left join 
-		AMI.Table1_Prior_3Month_Diagnosis as P90
+		Table1_Prior_3Month_Diagnosis as P90
 		on CB2.PERSON_ID = P90.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = P90.VISIT_OCCURRENCE_ID
 		and CB2.ADMIT_DATE = P90.ADMIT_DATE
 		and CB2.PRIM_DIAG = P90.PRIM_DIAG
 	left join
-		AMI.Table1_HOSPITAL_Score as H
+		Table1_HOSPITAL_Score as H
 		on CB2.PERSON_ID = H.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = H.VISIT_OCCURRENCE_ID
 		and CB2.ADMIT_DATE = H.ADMIT_DATE
 		and CB2.PRIM_DIAG = H.PRIM_DIAG
 	left join
-		AMI.Table1_Laboratories as L
+		Table1_Laboratories as L
 		on CB2.PERSON_ID = L.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = L.VISIT_OCCURRENCE_ID
 	left join
-		AMI.Table1_Presentation_Disease as PD
+		Table1_Presentation_Disease as PD
 		on CB2.PERSON_ID = PD.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = PD.VISIT_OCCURRENCE_ID
 	left join
-		AMI.Table1_Admin_Data as AD
+		Table1_Admin_Data as AD
 		on CB2.PERSON_ID = AD.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = AD.VISIT_OCCURRENCE_ID
 	left join
-		AMI.Table1_Discharge_Information as DI
+		Table1_Discharge_Information as DI
 		on CB2.PERSON_ID = DI.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = DI.VISIT_OCCURRENCE_ID
 	left join
-		AMI.Table1_Demographics as D
+		Table1_Demographics as D
 		on CB2.PERSON_ID = D.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = D.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Table1_Patient_History as PH
+		Table1_Patient_History as PH
 		on CB2.PERSON_ID = PH.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = PH.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.TABLE1_IN_HOSPITAL_OUTCOMES as HO
+		TABLE1_IN_HOSPITAL_OUTCOMES as HO
 		on CB2.PERSON_ID = HO.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = HO.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Table1_Comorbidities as C
+		Table1_Comorbidities as C
 		on CB2.PERSON_ID = C.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = C.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Table1_LACE_Score as LS
+		Table1_LACE_Score as LS
 		on CB2.PERSON_ID = LS.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = LS.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Table1_ENRICHD_Score as ES
+		Table1_ENRICHD_Score as ES
 		on CB2.PERSON_ID = ES.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = ES.VISIT_OCCURRENCE_ID
 	left join 
-		AMI.Table1_GRACE_Score as GS
+		Table1_GRACE_Score as GS
 		on CB2.PERSON_ID = GS.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = GS.VISIT_OCCURRENCE_ID
 	left join
-		AMI.READMISSIONS_FINAL as R
+		READMISSIONS_FINAL as R
 		on CB2.PERSON_ID = R.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = R.VISIT_OCCURRENCE_ID
 	left join
-		AMI.TABLE1_DISCHARGE_INFORMATION_MEDS as DM
+		TABLE1_DISCHARGE_INFORMATION_MEDS as DM
 		on CB2.PERSON_ID = DM.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = DM.VISIT_OCCURRENCE_ID
 	left join
-		AMI.Table1_AKI_Stage as AKI
+		Table1_AKI_Stage as AKI
 		on CB2.PERSON_ID = AKI.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = AKI.VISIT_OCCURRENCE_ID 
 	left join
-		AMI.Table1_Rehabilitation as Rehab
+		Table1_Rehabilitation as Rehab
 		on CB2.PERSON_ID = Rehab.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = Rehab.VISIT_OCCURRENCE_ID 
 	left join
-		AMI.Hypotension_Flag as Hypo
+		Hypotension_Flag as Hypo
 		on CB2.PERSON_ID = Hypo.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = Hypo.VISIT_OCCURRENCE_ID 
 	left join
-		AMI.Shock_Flag as Shock
+		Shock_Flag as Shock
 		on CB2.PERSON_ID = Shock.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = Shock.VISIT_OCCURRENCE_ID 
 	left join
-		AMI.AFib_Flag as AFib
+		AFib_Flag as AFib
 		on CB2.PERSON_ID = AFib.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = AFib.VISIT_OCCURRENCE_ID 
 	left join
-		AMI.proBNP_Calculation as pro
+		proBNP_Calculation as pro
 		on CB2.PERSON_ID = pro.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = pro.VISIT_OCCURRENCE_ID 
 	left join
-		AMI.CAD_Flag as CAD
+		CAD_Flag as CAD
 		on CB2.PERSON_ID = CAD.PERSON_ID
 		and CB2.VISIT_OCCURRENCE_ID = CAD.VISIT_OCCURRENCE_ID 
 ;
@@ -404,7 +411,7 @@ from
 
 
 /*
-Create or alter View AMI.vMasterFlatFile 
+Create or alter View vMasterFlatFile 
 as
 Select 
 	M.*
@@ -413,12 +420,12 @@ Select
 	, P.MIDDLE_NAME
 	, P.LAST_NAME
 from 
-	AMI.MasterFlatFile as M
+	MasterFlatFile as M
 	left join 
-	AMI.REF_PERSON_SSN as ssn
+	REF_PERSON_SSN as ssn
 		ON ssn.MRN = m.MRN
 	left join
-	AMI.REF_PERSON_NAMES as P
+	REF_PERSON_NAMES as P
 		on M.PERSON_ID = P.Person_ID
 ;
 */
@@ -433,12 +440,12 @@ from
 --Store latest iteration of master flat file data--
 
 --PUT DATE FOR TODAY IN FILE NAME FIRST--
-drop table if exists AMI.MasterFlatFile_2020_1006;
+drop table if exists MasterFlatFile_2020_1006;
 
 --PUT DATE FOR TODAY IN FILE NAME FIRST--
 select *
-into AMI.MasterFlatFile_2020_1006
-from AMI.MasterFlatFile
+into MasterFlatFile_2020_1006
+from MasterFlatFile
 ;
 */
 
@@ -458,7 +465,7 @@ USING
 )
 AS 
 SELECT *
-  FROM AMI.MasterFlatFile_2020_0916  --PUT DATE FOR TODAY IN FILE NAME FIRST--
+  FROM MasterFlatFile_2020_0916  --PUT DATE FOR TODAY IN FILE NAME FIRST--
 ;
 */
 --THEN SAVE THIS AS EXCEL FILE AND UPLOAD THIS TO SYNOLOGY IN DATA/MASTERFLATFILE FOLDER--
@@ -468,16 +475,16 @@ SELECT *
 --Some validation queries--
 /*
 
-select count(*) from AMI.MasterFlatFile;
+select count(*) from MasterFlatFile;
 --17556
 
-select count(*) from AMI.MasterFlatFile where Index_Admission_Flag = 1;
+select count(*) from MasterFlatFile where Index_Admission_Flag = 1;
 --9238
 
 SELECT 
 	VISIT_OCCURRENCE_ID
 	, count(*) as qty
-FROM AMI.MasterFlatFile
+FROM MasterFlatFile
 group by VISIT_OCCURRENCE_ID
 having count(*) > 1
 ;
@@ -485,15 +492,15 @@ having count(*) > 1
 
 
 
-select * from ami.masterflatfile
+select * from masterflatfile
 where index_admission_flag = 1 and ami_location = 'NA';
 --Should be zero results
 
-select count(*) from AMI.MasterFlatFile where DISCH_MED_BB_FLAG = 1;
+select count(*) from MasterFlatFile where DISCH_MED_BB_FLAG = 1;
 
 
 SELECT top 1000 *
-FROM AMI.MasterFlatFile
+FROM MasterFlatFile
 ;
 */
 

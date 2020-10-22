@@ -2,7 +2,8 @@
 -----------------------------------------------------------------------------------------
 --AMI Readmissions Project---------------------------------------------------------------
 -----------------------------------------------------------------------------------------
-USE AMI
+--USE AMI 
+USE OMOP_CDM -- 10/16/2020
 GO
 
 /*
@@ -97,7 +98,15 @@ order by concept_ID_Snomed
 --4154290
 --4232697
 
-drop table if exists AMI.AFib_Flag;
+--drop table if exists AMI.AFib_Flag;
+
+
+if exists (select * from sys.objects where name = 'AFib_Flag' and type = 'u')
+    drop table AFib_Flag
+
+
+;
+
 
 
 with AFib
@@ -107,15 +116,18 @@ select
 	CB2.PERSON_ID
 	, CB2.VISIT_OCCURRENCE_ID
 	, CB2.ADMIT_DATETIME
-	, CB2.ADMIT_DATETIME - 1 as Start_Range
-	, OCO.[CONDITION_START_DATETIME]
+	--, CB2.ADMIT_DATETIME - 1 as Start_Range
+	, (DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) as Start_Range
+	, OCO.[CONDITION_START_DATE]
 	, CB2.DISCHARGE_DATETIME
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
-	[OMOP].[CONDITION_OCCURRENCE] as OCO
+	[CONDITION_OCCURRENCE] as OCO
 		on CB2.PERSON_ID = OCO.Person_ID
-		and OCO.[CONDITION_START_DATETIME] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+		--and OCO.[CONDITION_START_DATETIME] between (CB2.ADMIT_DATETIME - 1) and (CB2.DISCHARGE_DATETIME)
+
+		and OCO.[CONDITION_START_DATE] between (DATEADD(dd, - 1, CB2.ADMIT_DATETIME)) and (CB2.DISCHARGE_DATETIME)
 where
 	OCO.[CONDITION_CONCEPT_ID] IN
 	(
@@ -137,9 +149,9 @@ select distinct
 		then 1 else 0
 	  End as AFib_Flag
 into
-	AMI.AFib_Flag
+	AFib_Flag
 from
-	AMI.COHORT_BASE_2 as CB2
+	COHORT_BASE_2 as CB2
 	left join
 	AFib as A
 		on CB2.PERSON_ID = A.PERSON_ID
