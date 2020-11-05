@@ -68,3 +68,8 @@ insert into REF_DIAG_CODES values ('AMI',	35207684,	'I21.3'	,	'ICD10CM', 	'ST el
 insert into REF_DIAG_CODES values ('AMI',	35207685,	'I21.4'	,	'ICD10CM', 	'Non-ST elevation (NSTEMI) myocardial infarction												','Condition',  'Maps to',	4270024,	401314000,			'SNOMED',	'Acute non-ST segment elevation myocardial infarction										', 'Condition',	'S');
 
 
+--added on 2020_1029
+insert into AMI.REF_DIAG_CODES values ('AMI' ,45572080 ,'I21.21'	,'ICD10CM'	,'ST elevation (STEMI) myocardial infarction involving left circumflex coronary artery'				,'Condition' ,'Maps to' ,4296653	,401303003			,'SNOMED'	,'Acute ST segment elevation myocardial infarction'														,'Condition'	,'S');
+insert into AMI.REF_DIAG_CODES values ('AMI' ,45605780 ,'I21.9'	,'ICD10'	,'Acute myocardial infarction, unspecified'															,'Condition' ,'Maps to' ,312327		,57054005			,'SNOMED'	,'Acute myocardial infarction'																			,'Condition'	,'S');
+insert into AMI.REF_DIAG_CODES values ('AMI' ,45562340 ,'I21.01'	,'ICD10CM'	,'ST elevation (STEMI) myocardial infarction involving left main coronary artery'					,'Condition' ,'Maps to' ,43020461	,285991000119100	,'SNOMED'	,'Acute ST segment elevation myocardial infarction involving left main coronary artery'					,'Condition'	,'S');
+insert into AMI.REF_DIAG_CODES values ('AMI' ,45572079 ,'I21.02'	,'ICD10CM'	,'ST elevation (STEMI) myocardial infarction involving left anterior descending coronary artery'	,'Condition' ,'Maps to' ,43020460	,285981000119103	,'SNOMED'	,'Acute ST segment elevation myocardial infarction involving left anterior descending coronary artery'	,'Condition'	,'S');
